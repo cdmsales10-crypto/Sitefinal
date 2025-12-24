@@ -11,12 +11,16 @@ export default function TestimonialsPage() {
   }, []);
 
   const loadTestimonials = async () => {
-    const { data } = await supabase
-      .from('testimonials')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data } = await supabase
+        .from('testimonials')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (data) setTestimonials(data);
+      if (data) setTestimonials(data);
+    } catch (error) {
+      console.log('Testimonials not available');
+    }
   };
 
   return (

@@ -14,22 +14,30 @@ export default function HomePage() {
   }, []);
 
   const loadFeaturedProducts = async () => {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .eq('featured', true)
-      .limit(20);
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .eq('featured', true)
+        .limit(20);
 
-    if (data) setProducts(data);
+      if (data) setProducts(data);
+    } catch (error) {
+      console.log('Products not available');
+    }
   };
 
   const loadTestimonials = async () => {
-    const { data } = await supabase
-      .from('testimonials')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data } = await supabase
+        .from('testimonials')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (data) setTestimonials(data);
+      if (data) setTestimonials(data);
+    } catch (error) {
+      console.log('Testimonials not available');
+    }
   };
 
   const handleWhatsAppOrder = (product: Product) => {

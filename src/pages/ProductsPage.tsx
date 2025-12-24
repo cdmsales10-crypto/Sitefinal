@@ -16,14 +16,18 @@ export default function ProductsPage() {
   }, [activeCategory, products]);
 
   const loadProducts = async () => {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (data) {
-      setProducts(data);
-      setFilteredProducts(data);
+      if (data) {
+        setProducts(data);
+        setFilteredProducts(data);
+      }
+    } catch (error) {
+      console.log('Products not available');
     }
   };
 
