@@ -1,68 +1,124 @@
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Phone, Mail, MapPin, Facebook, Instagram } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-interface FooterProps {
-  onNavigate?: (page: string) => void;
-}
-
-export default function Footer({ onNavigate }: FooterProps) {
-  const go = (page: string) => {
-    if (onNavigate) onNavigate(page);
-    else window.location.hash = `#${page}`;
-  };
+export default function Footer() {
+  const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="site-footer">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 lg:gap-12">
+    <footer className="bg-black text-white overflow-x-hidden">
+      <div className="container mx-auto px-3 sm:px-4 py-8 md:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           <div>
-            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-              <img src="/cmdlogo.svg" alt="Card Detailing Mart Logo" className="w-7 h-7 sm:w-8 sm:h-8" />
-              <span className="text-lg sm:text-xl font-display font-bold footer-heading tracking-luxury">Card Detailing Mart</span>
-            </div>
-            <p className="text-sm sm:text-base leading-relaxed text-muted">
-              Card Detailing Mart — India’s professional supplier of detailing chemicals, tools, and consumables for commercial operators and serious enthusiasts.
+            <Link to="/" className="flex items-center space-x-2 mb-4">
+              <img src="/cmdlogo.svg" alt="CDM Logo" className="w-20 md:w-28 h-20 md:h-28" />
+            </Link>
+            <p className="text-gray-400 text-xs md:text-sm mb-4 font-montserrat font-semibold leading-relaxed">
+              Your trusted partner for professional car detailing supplies. Serving professionals and enthusiasts across India.
             </p>
           </div>
 
           <div>
-            <h3 className="footer-heading font-display font-semibold text-base sm:text-lg mb-4 sm:mb-6 tracking-luxury">Quick Links</h3>
-            <ul className="space-y-2 sm:space-y-3 text-sm sm:text-base">
+            <h4 className="text-white font-anton text-base md:text-lg mb-3 md:mb-4">Quick Links</h4>
+            <ul className="space-y-2 font-montserrat font-semibold">
               <li>
-                <button onClick={() => go('home')} className="footer-link transition-colors duration-300 inline-block min-h-[44px] flex items-center">Home</button>
+                <Link to="/" className="text-gray-400 hover:text-yellow-400 transition-colors text-xs md:text-sm py-1 block min-h-9 flex items-center">
+                  Home
+                </Link>
               </li>
               <li>
-                <button onClick={() => go('about')} className="footer-link transition-colors duration-300 inline-block min-h-[44px] flex items-center">About Us</button>
+                <Link to="/products" className="text-gray-400 hover:text-yellow-400 transition-colors text-xs md:text-sm py-1 block min-h-9 flex items-center">
+                  Products
+                </Link>
               </li>
               <li>
-                <button onClick={() => go('contact')} className="footer-link transition-colors duration-300 inline-block min-h-[44px] flex items-center">Contact Us</button>
+                <Link to="/about" className="text-gray-400 hover:text-yellow-400 transition-colors text-xs md:text-sm py-1 block min-h-9 flex items-center">
+                  About Us
+                </Link>
               </li>
               <li>
-                <button onClick={() => go('policies')} className="footer-link transition-colors duration-300 inline-block min-h-[44px] flex items-center">Policies</button>
+                <Link to="/process" className="text-gray-400 hover:text-yellow-400 transition-colors text-xs md:text-sm py-1 block min-h-9 flex items-center">
+                  How It Works
+                </Link>
+              </li>
+              <li>
+                <Link to="/testimonials" className="text-gray-400 hover:text-yellow-400 transition-colors text-xs md:text-sm py-1 block min-h-9 flex items-center">
+                  Testimonials
+                </Link>
               </li>
             </ul>
           </div>
 
-          <div className="sm:col-span-2 lg:col-span-1">
-            <h3 className="footer-heading font-display font-semibold text-base sm:text-lg mb-4 sm:mb-6 tracking-luxury">Contact Us</h3>
-            <ul className="space-y-3 sm:space-y-4 text-sm sm:text-base">
-              <li className="flex items-start gap-3">
-                <Phone className="w-4 h-4 sm:w-5 sm:h-5 mt-1 flex-shrink-0 footer-icon" />
-                <a href="tel:9000805105" className="text-muted footer-link transition-colors min-h-[44px] flex items-center">9000805105</a>
+          <div>
+            <h4 className="text-white font-anton text-base md:text-lg mb-3 md:mb-4">Contact Info</h4>
+            <ul className="space-y-2 md:space-y-3 font-montserrat font-semibold">
+              <li>
+                <a href="tel:9000805105" className="flex items-start space-x-2 text-gray-400 hover:text-yellow-400 transition-colors text-xs md:text-sm py-1 min-h-9 flex items-center">
+                  <Phone className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>9000805105</span>
+                </a>
               </li>
-              <li className="flex items-start gap-3">
-                <Mail className="w-4 h-4 sm:w-5 sm:h-5 mt-1 flex-shrink-0 footer-icon" />
-                <a href="mailto:info@cdmonline.in" className="text-muted footer-link break-all transition-colors">info@cdmonline.in</a>
+              <li>
+                <a href="mailto:info@cdmonline.in" className="flex items-start space-x-2 text-gray-400 hover:text-yellow-400 transition-colors text-xs md:text-sm py-1 min-h-9 flex items-center">
+                  <Mail className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>info@cdmonline.in</span>
+                </a>
               </li>
-              <li className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mt-1 flex-shrink-0 footer-icon" />
-                <span className="text-muted leading-relaxed">CDM (Car Detailing Mart) · Opposite Mahatma Gandhi Bus Stand (MGBS) · Hyderabad, Telangana-500024</span>
+              <li>
+                <div className="flex items-start space-x-2 text-gray-400 text-xs md:text-sm">
+                  <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>
+                    CDM (Car Detailing Mart)<br />
+                    Opposite MGBS<br />
+                    Hyderabad, Telangana-500024
+                  </span>
+                </div>
               </li>
             </ul>
+          </div>
+
+          <div>
+            <h4 className="text-white font-anton text-base md:text-lg mb-3 md:mb-4">Follow Us</h4>
+            <div className="flex space-x-3 md:space-x-4 mb-4 md:mb-6">
+              <a href="#" className="bg-yellow-400 p-2.5 md:p-2 rounded-lg hover:bg-red-600 hover:scale-105 transition-colors min-h-11 min-w-11 flex items-center justify-center" aria-label="Facebook">
+                <Facebook className="w-5 h-5" />
+              </a>
+              <a href="#" className="bg-yellow-400 p-2.5 md:p-2 rounded-lg hover:bg-red-600 hover:scale-105 transition-colors min-h-11 min-w-11 flex items-center justify-center" aria-label="Instagram">
+                <Instagram className="w-5 h-5" />
+              </a>
+              <a href="https://x.com" aria-label="X" className="bg-yellow-400 p-2.5 md:p-2 rounded-lg hover:bg-red-600 hover:scale-105 transition-colors min-h-11 min-w-11 flex items-center justify-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 300 300.251"
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66" />
+                </svg>
+              </a>
+            </div>
+            <h4 className="text-white font-anton text-xs md:text-sm mb-2">Business Hours</h4>
+            <p className="text-gray-400 text-xs md:text-sm font-montserrat font-semibold leading-relaxed">
+              Open 24/7<br />
+              <span className="text-green-600 font-rajdhani font-bold">Online & In-Store</span>
+            </p>
           </div>
         </div>
 
-        <div className="border-t border-cdm mt-8 sm:mt-12 pt-6 sm:pt-8 text-center text-xs sm:text-sm">
-          <p className="text-muted">&copy; {new Date().getFullYear()} <span className="footer-heading">Card Detailing Mart</span>. All rights reserved.</p>
+        <div className="border-t border-gray-800 mt-6 md:mt-8 pt-4 md:pt-6 font-rajdhani font-bold">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0 text-center md:text-left">
+            <p className="text-gray-400 text-xs md:text-sm">
+              &copy; {currentYear} Car Detailing Mart. All rights reserved.
+            </p>
+            <div className="flex gap-3 md:gap-6 font-rajdhani font-bold flex-wrap justify-center md:justify-start">
+              <Link to="/support" className="text-gray-400 hover:text-yellow-400 text-xs md:text-sm transition-colors py-1 min-h-9 flex items-center">
+                Privacy Policy
+              </Link>
+              <Link to="/support" className="text-gray-400 hover:text-yellow-400 text-xs md:text-sm transition-colors py-1 min-h-9 flex items-center">
+                Terms of Service
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

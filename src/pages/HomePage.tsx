@@ -1,171 +1,318 @@
-import { Leaf, Shield, Sparkles, Heart, ShoppingCart } from 'lucide-react';
-import { PRODUCTS } from '../types';
-import ProductCard from '../components/ProductCard';
-import { useCart } from '../context/CartContext';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, Star, Shield, Truck, HeadphonesIcon, MessageCircle } from 'lucide-react';
+import { supabase, Product, Testimonial } from '../lib/supabase';
 
-interface HomePageProps {
-  onNavigate: (page: string) => void;
-}
+export default function HomePage() {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
-export default function HomePage({ onNavigate }: HomePageProps) {
-  const { getTotalItems } = useCart();
-  const hasItems = getTotalItems() > 0;
+  useEffect(() => {
+    loadFeaturedProducts();
+    loadTestimonials();
+  }, []);
+
+  const loadFeaturedProducts = async () => {
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('featured', true)
+      .limit(20);
+
+    if (data) setProducts(data);
+  };
+
+  const loadTestimonials = async () => {
+    const { data } = await supabase
+      .from('testimonials')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (data) setTestimonials(data);
+  };
+
+  const handleWhatsAppOrder = (product: Product) => {
+    const message = `Hi, I'm interested in ordering:\n\nProduct: ${product.name}\nPrice: ₹${product.price}\n\nPlease provide more details.`;
+    window.open(`https://wa.me/919000805105?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
-      <section className="relative bg-black py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden text-white">
-        <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-20"></div>
-        <div className="absolute inset-0 bg-black/80"></div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center animate-fade-in">
-            <div className="flex justify-center mb-6 sm:mb-8">
-              <img src="/cmdlogo.svg" alt="Card Detailing Mart Logo" className="w-60 h-60 sm:w-60 sm:h-60 animate-float" />
+    <div className="bg-white overflow-x-hidden">
+      <section className="relative bg-gray-200 py-12 md:py-20">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="flex flex-col items-center justify-center">
+            <div className="w-full max-w-full md:max-w-8xl">
+              <div className="relative bg-black rounded-xl md:rounded-2xl shadow-lg md:shadow-2xl overflow-hidden border border-gray-200 md:border-2" style={{ aspectRatio: '21/9', minHeight: '200px' }}>
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                  poster="/hv-poster.jpg"
+                  className="hero-video absolute inset-0 w-full h-full object-cover"
+                  style={{ display: 'block' }}
+                >
+                  <source src="/hv.mp4" type="video/mp4" />
+                </video>
+              <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center text-center px-3 sm:px-4">
+                <div className="text-center mb-6 md:mb-12 w-full">
+            <h2 className="text-3xl sm:text-5xl md:text-7xl font-anton mb-2 md:mb-4 text-center text-white leading-tight">Where Detailing Becomes a Standard</h2>
+            <div className="text-center mt-2 md:mt-4">
+            <p className="text-sm sm:text-base md:text-lg text-center text-white max-w-full md:max-w-7xl mx-auto font-poppins font-bold">
+              From passionate enthusiasts to professional garages, we deliver the tools, chemicals, and confidence to perfect every finish.
+            </p>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-display font-bold mb-4 sm:mb-6 tracking-luxury text-white">
-              India’s Professional Car Detailing Supply Destination
-            </h1>
+            <div className="text-center mt-3 md:mt-4">
+              <button
+                onClick={() => navigate('/products')}
+                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-6 sm:px-10 py-3 md:py-4 font-rajdhani font-bold inline-flex items-center justify-center sm:justify-start space-x-2 transition-all opacity-70 hover:opacity-100 rounded-xl md:rounded-2xl hover:shadow-2xl text-lg md:text-4xl min-h-12 md:min-h-auto"
+              >
+                <span>Explore Products</span>
+                <ArrowRight className="w-6 md:w-10 h-6 md:h-10" />
+              </button>
+            </div>
+          </div>
+              </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <p className="text-xl sm:text-2xl md:text-3xl mb-4 sm:mb-6 font-display font-medium tracking-luxury text-muted">
-              Professional-grade products, nationwide distribution, built for businesses
+      <section className="py-6 md:py-8 lg:py-12 bg-gray-50">
+        <div className="container mx-auto px-3 sm:px-4">
+          <h2 className="text-3xl md:text-5xl font-anton text-center mb-3 md:mb-4 text-red-600">How It Works</h2>
+         <img 
+  src="process.png" 
+  alt="Diagram showing the WhatsApp ordering process"
+  className="py-3 md:py-5 w-full max-w-4xl md:max-w-6xl mx-auto mb-8 md:mb-12 h-auto object-contain block"
+/>
+        </div>
+      </section>
+
+      <section className="py-12 md:py-16 bg-white">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-3xl md:text-5xl font-anton mb-2 md:mb-4 text-red-600">Our Products</h2>
+            <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto font-poppins font-bold px-2">
+              Premium quality detailing supplies trusted by professionals across India
             </p>
+          </div>
 
-            <p className="text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed mb-6 sm:mb-8 text-muted">
-              Serving professional detailers, fleets, workshops, showrooms, and serious enthusiasts with industry-trusted chemicals, tools, and consumables.
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {products.map((product) => (
+              <div
+                key={product.id}
+                className="bg-white border-2 border-gray-100 rounded-lg md:rounded-xl overflow-hidden hover:shadow-xl md:hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer"
+              >
+                <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-gray-400 text-3xl md:text-4xl mb-2">📦</div>
+                    <p className="text-gray-500 text-xs md:text-sm">Product</p>
+                  </div>
+                </div>
+                <div className="p-3 md:p-4">
+                  <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 text-sm md:text-base">{product.name}</h3>
+                  <p className="text-xs md:text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
+                  <div className="flex items-center justify-between mb-3 gap-2">
+                    <span className="text-red-600 font-bold text-base md:text-lg">₹{product.price}</span>
+                    <span className="bg-yellow-400 text-black text-xs px-2 py-1 rounded font-semibold">
+                      {product.category === 'car_chemicals' ? 'Chemical' : 'Accessory'}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleWhatsAppOrder(product)}
+                    className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 md:py-3 rounded-lg font-poppins flex items-center justify-center space-x-2 transition-all text-sm md:text-base font-semibold min-h-11"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Place Order</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-            <button onClick={() => { const productsSection = document.getElementById('products'); productsSection?.scrollIntoView({ behavior: 'smooth' }); }} className="btn-primary inline-block min-h-[44px] px-6 sm:px-8 text-sm sm:text-base">
-              View Catalog
+          <div className="text-center mt-8 md:mt-12">
+            <button
+              onClick={() => navigate('/products')}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-8 md:px-10 py-3 md:py-4 font-anton inline-flex items-center justify-center sm:justify-start space-x-2 transition-all animate-bounce text-2xl md:text-4xl min-h-12 md:min-h-auto"
+            >
+              <span>View all products</span>
+              <ArrowRight className="w-7 md:w-10 h-7 md:h-10" />
             </button>
           </div>
         </div>
       </section>
 
-      {/* Key Benefits Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-black text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center mb-8 sm:mb-12 md:mb-16 tracking-luxury text-white">
-            Why Professionals Choose CDM
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-
-            {/* Card 1 */}
-            <div className="text-center p-6 sm:p-8 card-premium hover:scale-[1.02] transition-all duration-300 animate-slide-up">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-[#2A2A2A]">
-                <Shield className="w-8 h-8 sm:w-10 sm:h-10 text-cdm-yellow" />
+      <section className="py-12 md:py-16 bg-gray-50 overflow-x-hidden">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center mb-12 md:mb-16">
+            <div>
+              <h2 className="text-2xl md:text-4xl font-anton mb-3 md:mb-6 text-red-600">Premium Car Accessories</h2>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-6 leading-relaxed font-jakarta">
+                Elevate your detailing game with our professional-grade car accessories. From microfiber towels to foam cannons, pressure washers to detailing brushes - we stock everything you need to achieve showroom-quality results.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-6 leading-relaxed font-jakarta">
+                Trusted by car wash centers, garages, showrooms, and professional detailers across India. Our accessories are built to withstand daily professional use while delivering consistent, exceptional results.
+              </p>
+              <div>
+                <button
+                  onClick={() => navigate('/products')}
+                  className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 hover:scale-105 text-black px-6 md:px-10 py-3 md:py-4 font-anton inline-flex items-center justify-center sm:justify-start space-x-2 transition-all text-xl md:text-2xl min-h-12 md:min-h-auto"
+                >
+                  <span>Explore Products</span>
+                  <ArrowRight className="w-5 md:w-6 h-5 md:h-6" />
+                </button>
               </div>
-                <h3 className="text-lg sm:text-xl font-display font-semibold text-white mb-2 sm:mb-3 tracking-luxury">
-                Quality-Controlled Products
-              </h3>
-              <p className="text-muted text-sm leading-relaxed">
-                Batch-tested formulas for consistent professional performance
+            </div>
+            <div>
+              <img
+                src="ba.jpeg"
+                alt="Car Accessories"
+                className="rounded-lg md:rounded-2xl shadow-lg md:shadow-2xl w-full h-auto object-cover"
+              />
+            </div>
+
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
+            <div className="order-2 md:order-1">
+              <img
+                src="ba.png"
+                alt="Bike Accessories"
+                className="rounded-lg md:rounded-2xl shadow-lg md:shadow-2xl w-full h-auto object-cover"
+              />
+            </div>
+            <div className="order-1 md:order-2">
+              <h2 className="text-2xl md:text-4xl font-anton mb-3 md:mb-6 text-red-600">Premium Bike Accessories</h2>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-6 leading-relaxed font-jakarta">
+                Don't forget your two-wheelers! Our specialized bike detailing accessories and chemicals are formulated to protect and enhance motorcycle finishes. From chain cleaners to chrome polish, we've got bikers covered.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-6 leading-relaxed font-jakarta">
+                Whether you're a motorcycle enthusiast or run a bike service center, our products deliver the shine and protection your bikes deserve. Suitable for all types of motorcycles - sports bikes, cruisers, and everything in between.
+              </p>
+              <div>
+                <button
+                  onClick={() => navigate('/products')}
+                  className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 hover:scale-105 text-black px-6 md:px-10 py-3 md:py-4 font-anton inline-flex items-center justify-center sm:justify-start space-x-2 transition-all text-xl md:text-2xl min-h-12 md:min-h-auto"
+                  >
+                  <span>Explore Products</span>
+                  <ArrowRight className="w-5 md:w-6 h-5 md:h-6" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-12 md:py-16 bg-white overflow-x-hidden">
+        <div className="container mx-auto px-3 sm:px-4">
+          <h2 className="text-2xl md:text-4xl font-anton text-center mb-8 md:mb-12 text-red-600">Why Choose CDM?</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+            <div className="text-center p-4 md:p-6 bg-gray-50 rounded-lg md:rounded-xl hover:shadow-lg md:hover:shadow-xl transition-all">
+              <div className="bg-red-600 w-14 md:w-16 h-14 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <Shield className="w-7 md:w-8 h-7 md:h-8 text-white" />
+              </div>
+              <h3 className="font-bold text-base md:text-xl mb-2 md:mb-3 text-gray-800">Premium Quality</h3>
+              <p className="text-gray-600 text-sm md:text-base font-montserrat">
+                Professional-grade products trusted by detailing experts nationwide
               </p>
             </div>
 
-            {/* Card 2 */}
-            <div
-              className="text-center p-6 sm:p-8 card-premium hover:scale-[1.02] transition-all duration-300 animate-slide-up"
-              style={{ animationDelay: '0.1s' }}
-            >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-[#2A2A2A]">
-                <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-cdm-yellow" />
+            <div className="text-center p-4 md:p-6 bg-gray-50 rounded-lg md:rounded-xl hover:shadow-lg md:hover:shadow-xl transition-all">
+              <div className="bg-yellow-400 w-14 md:w-16 h-14 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <Truck className="w-7 md:w-8 h-7 md:h-8 text-black" />
               </div>
-              <h3 className="text-lg sm:text-xl font-display font-semibold text-white mb-2 sm:mb-3 tracking-luxury">
-                Reliable Availability
-              </h3>
-              <p className="text-muted text-sm leading-relaxed">
-                Nationwide distribution ensures steady supply and fast restocking
+              <h3 className="font-bold text-base md:text-xl mb-2 md:mb-3 text-gray-800">Fast Delivery</h3>
+              <p className="text-gray-600 text-sm md:text-base font-montserrat">
+                Quick and reliable shipping to get your products when you need them.
               </p>
             </div>
 
-            {/* Card 3 */}
-            <div
-              className="text-center p-6 sm:p-8 card-premium hover:scale-[1.02] transition-all duration-300 animate-slide-up"
-              style={{ animationDelay: '0.2s' }}
-            >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-[#2A2A2A]">
-                <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-cdm-yellow" />
+            <div className="text-center p-4 md:p-6 bg-gray-50 rounded-lg md:rounded-xl hover:shadow-lg md:hover:shadow-xl transition-all">
+              <div className="bg-red-600 w-14 md:w-16 h-14 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <HeadphonesIcon className="w-7 md:w-8 h-7 md:h-8 text-white" />
               </div>
-              <h3 className="text-lg sm:text-xl font-display font-semibold text-white mb-2 sm:mb-3 tracking-luxury">
-                One-Stop Sourcing
-              </h3>
-              <p className="text-muted text-sm leading-relaxed">
-                Full range of chemicals, tools, and consumables for commercial operations
+              <h3 className="font-bold text-base md:text-xl mb-2 md:mb-3 text-gray-800">Expert Support</h3>
+              <p className="text-gray-600 text-sm md:text-base font-montserrat">
+                Dedicated team to guide you through product selection and usage
               </p>
             </div>
 
-            {/* Card 4 */}
-            <div
-              className="text-center p-6 sm:p-8 card-premium hover:scale-[1.02] transition-all duration-300 animate-slide-up"
-              style={{ animationDelay: '0.3s' }}
-            >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-[#2A2A2A]">
-                <Leaf className="w-8 h-8 sm:w-10 sm:h-10 text-cdm-yellow" />
+            <div className="text-center p-4 md:p-6 bg-gray-50 rounded-lg md:rounded-xl hover:shadow-lg md:hover:shadow-xl transition-all">
+              <div className="bg-yellow-400 w-14 md:w-16 h-14 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <Star className="w-7 md:w-8 h-7 md:h-8 text-black" />
               </div>
-              <h3 className="text-lg sm:text-xl font-display font-semibold text-white mb-2 sm:mb-3 tracking-luxury">
-                Industry-Trusted
-              </h3>
-              <p className="text-muted text-sm leading-relaxed">
-                Preferred by commercial detailers and service centers nationwide
+              <h3 className="font-bold text-base md:text-xl mb-2 md:mb-3 text-gray-800">Trusted Brand</h3>
+              <p className="text-gray-600 text-sm md:text-base font-montserrat">
+                Growing national presence with plans for franchises across India
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Products Section */}
-      <section id="products" className="py-12 sm:py-16 md:py-20 bg-section scroll-mt-20 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-12 md:py-16 bg-gradient-to-br from-gray-900 to-black overflow-x-hidden">
+        <div className="container mx-auto px-3 sm:px-4">
+          <h2 className="text-2xl md:text-4xl font-anton text-center mb-8 md:mb-12 text-white">What Our Customers Say</h2>
 
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center mb-8 sm:mb-12 md:mb-16 tracking-luxury text-white">
-            Product Catalog
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
-            {PRODUCTS.map((product, index) => (
-              <div key={product.id} style={{ animationDelay: `${index * 0.1}s` }}>
-                <ProductCard product={product} />
-              </div>
-            ))}
+          <div className="relative overflow-hidden">
+            <div className="flex animate-scroll space-x-4 md:space-x-6">
+              {[...testimonials, ...testimonials].map((testimonial, index) => (
+                <div
+                  key={`${testimonial.id}-${index}`}
+                  className="flex-shrink-0 w-72 md:w-80 lg:w-96 bg-white rounded-lg md:rounded-xl p-4 md:p-6 shadow-lg md:shadow-xl"
+                >
+                  <div className="flex items-center mb-3 md:mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-4 md:w-5 h-4 md:h-5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-gray-600 mb-3 md:mb-4 italic text-sm md:text-base">"{testimonial.comment}"</p>
+                  <p className="font-bold text-gray-800 text-sm md:text-base">{testimonial.customer_name}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Floating Cart Button */}
-      {hasItems && (
-          <div className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-40">
-          <button
-            onClick={() => onNavigate('cart')}
-            className="header-cta px-6 py-3 sm:px-10 sm:py-5 rounded-full font-semibold text-sm sm:text-lg flex items-center gap-2 sm:gap-3 transition-all duration-300 transform hover:scale-105 min-h-[44px] sm:min-h-[56px]"
-          >
-            <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            <span className="hidden sm:inline">Check Cart</span>
-            <span className="sm:hidden">Cart</span>
-          </button>
-        </div>
-      )}
-
-      {/* CTA Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-section relative overflow-hidden text-white">
-        <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-20"></div>
-        <div className="absolute inset-0 bg-black/80"></div>
-
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-4 sm:mb-6 tracking-luxury text-white">
-            Partner with CDM
-          </h2>
-          <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-10 leading-relaxed text-muted">
-            Request trade pricing, bulk supply, or franchise information — built for business needs.
+      <section className="py-20 bg-yellow-400">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-4xl md:text-5xl font-anton mb-6 text-white">Ready to Get Started?</h2>
+          <p className="text-xl text-white font-poppins font-bold mb-8 max-w-3xl mx-auto">
+            Join hundreds of satisfied customers and experience premium car detailing supplies
           </p>
-
-          <button onClick={() => onNavigate('contact')} className="btn-primary px-6 sm:px-10 py-3 sm:py-4 rounded-xl font-semibold">
-            Contact Sales
+          <button
+            onClick={() => navigate('/contact')}
+            className="bg-black hover:bg-red-600 text-white px-12 py-5 font-anton text-lg inline-flex items-center space-x-3 transition-all transform hover:scale-105"
+          >
+            <span>Contact Us Today</span>
+            <ArrowRight className="w-6 h-6" />
           </button>
         </div>
       </section>
+
+      <style>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
+        .animate-scroll {
+          animation: scroll 30s linear infinite;
+        }
+
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
     </div>
   );
 }

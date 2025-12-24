@@ -1,119 +1,116 @@
-import { Leaf, Target, Heart, Award } from 'lucide-react';
+import { Target, Users, TrendingUp, Award } from 'lucide-react';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
-      <section className="relative bg-black py-16 sm:py-20 md:py-24 lg:py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-20"></div>
-        <div className="absolute inset-0 bg-black/80"></div>
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-4 sm:mb-6 tracking-luxury animate-fade-in">
-            About Card Detailing Mart
-          </h1>
-            <p className="text-lg sm:text-xl text-muted mb-6 sm:mb-8 leading-relaxed">
-              CDM is India’s professional car detailing supply brand — supplying professional-grade chemicals, tools, and consumables to detailers, workshops, showrooms, and fleets.
+    <div className="bg-white overflow-x-hidden">
+      <section className="bg-gradient-to-b from-gray-900 to-black py-12 md:py-20">
+        <div className="container mx-auto px-3 sm:px-4 text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-4 mb-3 md:mb-6 flex-wrap">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-red-600 leading-tight">About</h1>
+            <img src="cmdlogo.svg" alt="CDM Logo" className="h-16 md:h-20 lg:h-28 animate-pulse -mt-6" />
+          </div>
+          <p className="text-sm md:text-lg lg:text-xl text-white font-archivo max-w-3xl mx-auto px-2">
+            Building India's most trusted car detailing supply brand
           </p>
         </div>
       </section>
 
-      {/* Story Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-black">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-4 sm:space-y-6 text-muted text-base sm:text-lg leading-relaxed">
-            <p className="animate-fade-in">
-              At Card Detailing Mart, we believe in delivering high-quality car detailing services. Our mission is to
-              provide professional care and detailing that preserves and enhances your vehicle's appearance.
-            </p>
-            <p className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              We understand that in today's fast-paced world, maintaining a healthy lifestyle can be
-              challenging. That's why we've created a range of organic powders that make it easy to
-              incorporate essential nutrients into your daily routine. Each product is selected with care,
-              ensuring the highest quality and maximum nutritional benefits.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Values Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-section">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center text-white mb-8 sm:mb-12 md:mb-16 tracking-luxury">Our Values</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            <div className="card-premium p-6 sm:p-8 hover:scale-[1.02] transition-all duration-300 text-center animate-slide-up">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-[#2A2A2A]">
-                <Leaf className="w-8 h-8 sm:w-10 sm:h-10 text-cdm-yellow" />
-              </div>
-              <h3 className="text-lg sm:text-xl font-display font-semibold text-white mb-3 sm:mb-4 tracking-luxury">100% Professional</h3>
-              <p className="text-muted text-xs sm:text-sm leading-relaxed">
-                We use professional-grade techniques and products to protect and enhance your vehicle.
+      <section className="py-12 md:py-16 bg-white">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
+            <div>
+              <h2 className="text-2xl md:text-4xl font-anton mb-3 md:mb-6 text-red-600">Who We Are</h2>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+                Car Detailing Mart (CDM) is more than just a store - we're a one-stop destination for all car detailing supply needs. Serving detailing professionals, car wash centers, garages, showrooms, and passionate car enthusiasts across India.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+                Located opposite the iconic Mahatma Gandhi Bus Stand (MGBS) in Hyderabad, CDM offers a comprehensive range of chemicals, tools, accessories, and detailing essentials under one roof.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 leading-relaxed font-jakarta">
+                We're not just a local shop - CDM is being built as a scalable national brand with a vision of establishing franchises and company-owned branches across India.
               </p>
             </div>
-
-            <div className="card-premium p-6 sm:p-8 hover:scale-[1.02] transition-all duration-300 text-center animate-slide-up" style={{ animationDelay: '0.1s' }}>
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-[#2A2A2A]">
-                <Target className="w-8 h-8 sm:w-10 sm:h-10 text-cdm-yellow" />
-              </div>
-                <h3 className="text-lg sm:text-xl font-display font-semibold text-white mb-3 sm:mb-4 tracking-luxury">Operational Quality</h3>
-                <p className="text-muted text-xs sm:text-sm leading-relaxed">
-                  Standardized QA and batch-tested products for consistent professional results.
-              </p>
-            </div>
-
-            <div className="card-premium p-6 sm:p-8 hover:scale-[1.02] transition-all duration-300 text-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-[#2A2A2A]">
-                <Heart className="w-8 h-8 sm:w-10 sm:h-10 text-cdm-yellow" />
-              </div>
-                <h3 className="text-lg sm:text-xl font-display font-semibold text-white mb-3 sm:mb-4 tracking-luxury">Trade Support</h3>
-                <p className="text-muted text-xs sm:text-sm leading-relaxed">
-                  Dedicated sales and logistics support for commercial customers and partners.
-              </p>
-            </div>
-
-            <div className="card-premium p-6 sm:p-8 hover:scale-[1.02] transition-all duration-300 text-center animate-slide-up" style={{ animationDelay: '0.3s' }}>
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 border border-[#2A2A2A]">
-                <Award className="w-8 h-8 sm:w-10 sm:h-10 text-cdm-yellow" />
-              </div>
-                <h3 className="text-lg sm:text-xl font-display font-semibold text-white mb-3 sm:mb-4 tracking-luxury">Operational Integrity</h3>
-                <p className="text-muted text-xs sm:text-sm leading-relaxed">
-                  Transparent sourcing, standardized pricing, and compliance-forward operations.
-              </p>
+            <div>
+              <img
+                src="ab.png"
+                alt="About CDM"
+                className="rounded-lg md:rounded-2xl shadow-lg md:shadow-2xl w-full h-auto object-cover"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Our Story Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-black">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-center text-white mb-8 sm:mb-12 tracking-luxury">Our Story</h2>
-          <div className="space-y-6 sm:space-y-8 text-muted text-base sm:text-lg leading-relaxed">
-            <p className="animate-fade-in">
-              Card Detailing Mart was born from a simple belief: that every vehicle deserves professional,
-              attentive detailing to maintain its value and appearance.
-            </p>
-            <p className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              We offer a range of premium car detailing services including exterior wash and polish,
-              interior deep-cleaning, paint protection, and ceramic coatings. Our team uses professional-grade
-              products and techniques to deliver lasting results.
-            </p>
-            <p className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
-              Today, we're proud to serve a growing community of vehicle owners who trust Card Detailing Mart
-              for reliable, high-quality detailing and exceptional customer service.
-            </p>
+      <section className="py-12 md:py-16 bg-gray-50">
+        <div className="container mx-auto px-3 sm:px-4">
+          <h2 className="text-2xl md:text-4xl font-anton text-center mb-8 md:mb-12 text-red-600">Our Core Values</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+            <div className="bg-white p-4 md:p-8 rounded-lg md:rounded-xl shadow-lg text-center">
+              <div className="bg-red-600 w-14 md:w-16 h-14 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <Target className="w-7 md:w-8 h-7 md:h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-poppins font-bold mb-3 text-gray-800">Quality First</h3>
+              <p className="text-gray-600 font-montserrat">
+                We stock only professional-grade products that meet the highest industry standards
+              </p>
+            </div>
+
+            <div className="bg-white p-4 md:p-8 rounded-lg md:rounded-xl shadow-lg text-center">
+              <div className="bg-red-600 w-14 md:w-16 h-14 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <Users className="w-7 md:w-8 h-7 md:h-8 text-white" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold font-poppins mb-2 md:mb-3 text-gray-800">Customer Focus</h3>
+              <p className="text-xs md:text-sm text-gray-600 font-montserrat">
+                Your satisfaction and success is our priority. We're here to support your detailing journey
+              </p>
+            </div>
+
+            <div className="bg-white p-4 md:p-8 rounded-lg md:rounded-xl shadow-lg text-center">
+              <div className="bg-red-600 w-14 md:w-16 h-14 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <TrendingUp className="w-7 md:w-8 h-7 md:h-8 text-white" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold font-poppins mb-2 md:mb-3 text-gray-800">Innovation</h3>
+              <p className="text-xs md:text-sm text-gray-600 font-montserrat">
+                Constantly expanding our product range with the latest detailing technologies
+              </p>
+            </div>
+
+            <div className="bg-white p-4 md:p-8 rounded-lg md:rounded-xl shadow-lg text-center">
+              <div className="bg-red-600 w-14 md:w-16 h-14 md:h-16 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                <Award className="w-7 md:w-8 h-7 md:h-8 text-white" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold font-poppins mb-2 md:mb-3 text-gray-800">Trust</h3>
+              <p className="text-xs md:text-sm text-gray-600 font-montserrat">
+                Building long-term relationships through consistency, transparency, and reliability
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-12 sm:py-16 md:py-20 bg-section text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/1002703/pexels-photo-1002703.jpeg?auto=compress&cs=tinysrgb&w=1920')] bg-cover bg-center opacity-20"></div>
-        <div className="absolute inset-0 bg-black/80"></div>
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-4 sm:mb-6 tracking-luxury">Join Our Community</h2>
-            <p className="text-base sm:text-lg md:text-xl mb-6 sm:mb-8 leading-relaxed text-muted">
-            Become part of the Card Detailing Mart family and experience professional car care today.
-          </p>
+      <section className="py-12 md:py-16 bg-white">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
+            <div className="order-2 md:order-1">
+              <img
+                src="a2.png"
+                alt="Our Vision"
+                className="rounded-lg md:rounded-2xl shadow-lg md:shadow-2xl w-full h-auto object-cover"
+              />
+            </div>
+            <div className="order-1 md:order-2">
+              <h2 className="text-2xl md:text-4xl font-anton mb-3 md:mb-6 text-red-600">Our Vision</h2>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+                To become India's leading car detailing supply brand, known for quality, reliability, and nationwide accessibility.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+                We envision a future where CDM has a presence in every major city across India, making professional-grade detailing supplies accessible to everyone - from individual enthusiasts to large-scale operations.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 leading-relaxed font-jakarta">
+                Through franchises and company-owned branches, we're building a network that ensures consistent quality and service standards across the country.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </div>
