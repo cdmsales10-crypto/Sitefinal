@@ -89,10 +89,10 @@ export default function HomePage() {
                     <div className="mt-2 sm:mt-3 md:mt-4">
                       <button
                         onClick={() => navigate('/products')}
-                        className="w-full sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-3 sm:px-10 py-1.5 sm:py-3 md:py-4 font-rajdhani font-bold inline-flex items-center justify-center space-x-1 sm:space-x-2 transition-all opacity-70 hover:opacity-100 rounded-lg md:rounded-2xl hover:shadow-2xl text-xs sm:text-lg md:text-4xl min-h-9 md:min-h-auto"
+                        className="w-full sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-2.5 sm:px-10 py-1 sm:py-3 md:py-4 font-rajdhani font-bold inline-flex items-center justify-center space-x-0.5 sm:space-x-2 transition-all opacity-70 hover:opacity-100 rounded-lg md:rounded-2xl hover:shadow-2xl text-[10px] sm:text-lg md:text-4xl min-h-8 md:min-h-auto"
                       >
                         <span>Explore Products</span>
-                        <ArrowRight className="w-3.5 sm:w-6 md:w-10 h-3.5 sm:h-6 md:h-10" />
+                        <ArrowRight className="w-3 sm:w-6 md:w-10 h-3 sm:h-6 md:h-10" />
                       </button>
                     </div>
                   </div>

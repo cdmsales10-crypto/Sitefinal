@@ -3,10 +3,10 @@ import { Shield, Lock, FileText, HelpCircle } from 'lucide-react';
 export default function SupportPage() {
   return (
     <div className="bg-white">
-      <section className="bg-gray-50 py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-5xl md:text-6xl font-anton mb-6 text-red-600">Support & Policies</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto font-poppins font-bold">
+      <section className="bg-gray-50 py-8 md:py-20">
+        <div className="container mx-auto px-3 sm:px-4 text-center">
+          <h1 className="text-2xl sm:text-4xl md:text-6xl font-anton mb-2 sm:mb-4 md:mb-6 text-red-600">Support & Policies</h1>
+          <p className="text-xs sm:text-base md:text-xl text-gray-600 max-w-3xl mx-auto font-poppins font-bold px-2">
             Your trust and privacy are our top priorities
           </p>
         </div>
