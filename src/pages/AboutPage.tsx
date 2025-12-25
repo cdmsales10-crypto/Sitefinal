@@ -3,13 +3,12 @@ import { Target, Users, TrendingUp, Award } from 'lucide-react';
 export default function AboutPage() {
   return (
     <div className="bg-white overflow-x-hidden">
-      <section className="bg-gradient-to-b from-gray-900 to-black py-12 md:py-20">
+      <section className="bg-gray-100 py-12 md:py-20">
         <div className="container mx-auto px-3 sm:px-4 text-center">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-4 mb-3 md:mb-6 flex-wrap">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-red-600 leading-tight">About</h1>
-            <img src="cmdlogo.svg" alt="CDM Logo" className="h-16 md:h-20 lg:h-28 animate-pulse -mt-6" />
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-anton text-red-600 leading-tight">About CDM</h1>
           </div>
-          <p className="text-sm md:text-lg lg:text-xl text-white font-archivo max-w-3xl mx-auto px-2">
+          <p className="text-sm md:text-lg lg:text-xl text-gray-600 font-poppins font-bold max-w-3xl mx-auto px-2">
             Building India's most trusted car detailing supply brand
           </p>
         </div>
