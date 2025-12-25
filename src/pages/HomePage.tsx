@@ -47,47 +47,63 @@ export default function HomePage() {
 
   return (
     <div className="bg-white overflow-x-hidden">
-      <section className="relative bg-gray-200 py-12 md:py-20">
+      <section className="relative bg-gray-200 py-6 md:py-20">
         <div className="container mx-auto px-3 sm:px-4">
-          <div className="flex flex-col items-center justify-center">
+          <div className="flex justify-center">
             <div className="w-full max-w-full md:max-w-8xl">
-              <div className="relative bg-black rounded-xl md:rounded-2xl shadow-lg md:shadow-2xl overflow-hidden border border-gray-200 md:border-2" style={{ aspectRatio: '21/9', minHeight: '200px' }}>
+              <div
+                className="relative bg-black rounded-lg md:rounded-2xl shadow-lg md:shadow-2xl overflow-hidden border border-gray-200 md:border-2"
+                style={{ 
+                  aspectRatio: window.innerWidth < 768 ? '16/10' : '21/9',
+                  minHeight: window.innerWidth < 768 ? '180px' : '200px'
+                }}
+              >
+                {/* Background Video */}
                 <video
                   autoPlay
                   muted
                   loop
                   playsInline
-                  preload="metadata"
+                  preload="auto"
                   poster="/hv-poster.jpg"
                   className="hero-video absolute inset-0 w-full h-full object-cover"
                   style={{ display: 'block' }}
                 >
                   <source src="/hv.mp4" type="video/mp4" />
                 </video>
-              <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center text-center px-3 sm:px-4">
-                <div className="text-center mb-6 md:mb-12 w-full">
-            <h2 className="text-3xl sm:text-5xl md:text-7xl font-anton mb-2 md:mb-4 text-center text-white leading-tight">Where Detailing Becomes a Standard</h2>
-            <div className="text-center mt-2 md:mt-4">
-            <p className="text-sm sm:text-base md:text-lg text-center text-white max-w-full md:max-w-7xl mx-auto font-poppins font-bold">
-              From passionate enthusiasts to professional garages, we deliver the tools, chemicals, and confidence to perfect every finish.
-            </p>
-            </div>
-            <div className="text-center mt-3 md:mt-4">
-              <button
-                onClick={() => navigate('/products')}
-                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-6 sm:px-10 py-3 md:py-4 font-rajdhani font-bold inline-flex items-center justify-center sm:justify-start space-x-2 transition-all opacity-70 hover:opacity-100 rounded-xl md:rounded-2xl hover:shadow-2xl text-lg md:text-4xl min-h-12 md:min-h-auto"
-              >
-                <span>Explore Products</span>
-                <ArrowRight className="w-6 md:w-10 h-6 md:h-10" />
-              </button>
-            </div>
-          </div>
-              </div>
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center px-3 sm:px-4 py-6 md:py-0">
+                  <div className="text-center w-full">
+                    {/* Heading */}
+                    <h2 className="text-xl sm:text-3xl md:text-7xl font-anton mb-1 sm:mb-2 md:mb-4 text-white leading-tight">
+                      Where Detailing Becomes a Standard
+                    </h2>
+
+                    {/* Subtext */}
+                    <p className="text-xs sm:text-sm md:text-lg text-white max-w-full md:max-w-7xl mx-auto font-poppins font-bold mt-1 sm:mt-2 md:mt-4 line-clamp-2 md:line-clamp-none">
+                      From passionate enthusiasts to professional garages, we deliver the tools, chemicals, and confidence to perfect every finish.
+                    </p>
+
+                    {/* CTA */}
+                    <div className="mt-2 sm:mt-3 md:mt-4">
+                      <button
+                        onClick={() => navigate('/products')}
+                        className="w-full sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-4 sm:px-10 py-2 sm:py-3 md:py-4 font-rajdhani font-bold inline-flex items-center justify-center space-x-1 sm:space-x-2 transition-all opacity-70 hover:opacity-100 rounded-lg md:rounded-2xl hover:shadow-2xl text-xs sm:text-lg md:text-4xl min-h-10 md:min-h-auto"
+                      >
+                        <span>Explore Products</span>
+                        <ArrowRight className="w-4 sm:w-6 md:w-10 h-4 sm:h-6 md:h-10" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                {/* End Overlay */}
               </div>
             </div>
           </div>
         </div>
       </section>
+
 
       <section className="py-6 md:py-8 lg:py-12 bg-gray-50">
         <div className="container mx-auto px-3 sm:px-4">
