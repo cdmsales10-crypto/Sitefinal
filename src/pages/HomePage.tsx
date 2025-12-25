@@ -81,7 +81,7 @@ export default function HomePage() {
                     </h2>
 
                     {/* Subtext */}
-                    <p className="text-xs sm:text-xs md:text-lg text-white max-w-full md:max-w-7xl mx-auto font-poppins font-bold mt-1 sm:mt-2 md:mt-4 line-clamp-2 md:line-clamp-none">
+                    <p className="text-xs sm:text-xs md:text-lg text-white max-w-full md:max-w-7xl mx-auto font-poppins font-bold mt-1 sm:mt-2 md:mt-4">
                       From passionate enthusiasts to professional garages, we deliver the tools, chemicals, and confidence to perfect every finish.
                     </p>
 
