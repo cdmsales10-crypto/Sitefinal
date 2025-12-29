@@ -37,12 +37,6 @@ const WORKFLOW_STEPS: WorkflowStep[] = [
   {
     id: '5',
     step_number: 5,
-    title: 'Quality Check & Packing',
-    description: 'Your products undergo rigorous quality checks before being carefully packed for safe delivery.'
-  },
-  {
-    id: '6',
-    step_number: 6,
     title: 'Quick Delivery',
     description: 'Your order ships out quickly. Track your package and receive it in perfect condition at your doorstep.'
   }
