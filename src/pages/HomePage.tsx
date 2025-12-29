@@ -148,10 +148,10 @@ export default function HomePage() {
           <div className="text-center mt-8 md:mt-12">
             <button
               onClick={() => navigate('/products')}
-              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-8 md:px-10 py-3 md:py-4 font-anton inline-flex items-center justify-center sm:justify-start space-x-2 transition-all animate-bounce text-2xl md:text-4xl min-h-12 md:min-h-auto"
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-4 md:px-10 py-2 md:py-4 font-anton inline-flex items-center justify-center sm:justify-start space-x-2 transition-all animate-bounce text-xl md:text-4xl min-h-6 md:min-h-auto"
             >
               <span>View all products</span>
-              <ArrowRight className="w-7 md:w-10 h-7 md:h-10" />
+              <ArrowRight className="w-4 md:w-10 h-4 md:h-10" />
             </button>
           </div>
         </div>
