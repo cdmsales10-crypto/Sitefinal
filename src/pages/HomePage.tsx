@@ -89,7 +89,7 @@ export default function HomePage() {
       </section>
 
 
-      <section className="py-10 md:py-8 lg:py-12 bg-gray-50">
+      <section className="py-12 md:py-8 lg:py-12 bg-gray-50">
         <div className="container mx-auto px-3 sm:px-4">
           <h2 className="text-3xl md:text-5xl font-anton text-center mb-3 md:mb-4 text-red-600">How It Works</h2>
          <img 
