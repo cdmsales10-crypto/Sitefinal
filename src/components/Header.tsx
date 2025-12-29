@@ -20,8 +20,9 @@ export default function Header() {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="bg-black text-white sticky top-0 z-50 shadow-lg">
-      <div className="container mx-auto px-3 sm:px-4">
+    <>
+      <header className="bg-black text-white fixed top-0 left-0 w-full z-50 shadow-lg">
+        <div className="container mx-auto px-3 sm:px-4">
         <div className="flex items-center justify-between py-2 sm:py-3">
           <Link
             to="/"
@@ -83,7 +84,9 @@ export default function Header() {
           </nav>
         )}
       </div>
-    </header>
+      </header>
+      <div className="h-16 sm:h-20 md:h-24" />
+    </>
   );
 }
 
