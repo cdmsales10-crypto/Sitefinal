@@ -10,7 +10,7 @@ export default function WhatsAppButton() {
     className="transition-all hover:scale-110 opacity-60 hover:opacity-100"
     aria-label="Chat on WhatsApp"
   >
-    <img src="wh.svg" alt="WhatsApp" className="w-20 h-20" />
+    <img src="wh.svg" alt="WhatsApp" className="w-10 h-10 md:w-20 md:h-20" />
   </button>
 
   {/* Tooltip */}
