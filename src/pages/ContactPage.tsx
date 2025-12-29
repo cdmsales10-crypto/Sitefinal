@@ -70,7 +70,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-bold font-poppins text-base md:text-xl mb-1 md:mb-2 text-gray-800">Business Hours</h3>
-                    <p className="text-gray-600 text-sm md:text-lg font-urbanist">Open 24/7</p>
+                    <p className="text-gray-600 text-sm md:text-lg font-urbanist">9am - 5pm</p>
                     <p className="text-xs md:text-sm text-gray-500 mt-1 font-rajdhani font-bold">Both online and in-store available</p>
                   </div>
                 </div>

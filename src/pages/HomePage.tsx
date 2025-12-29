@@ -1,17 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Star, Shield, Truck, HeadphonesIcon, MessageCircle } from 'lucide-react';
+import { ArrowRight, Star, Shield, Truck, HeadphonesIcon, Target, Users, TrendingUp, Award } from 'lucide-react';
 import { supabase, Product, Testimonial } from '../lib/supabase';
+import ProductCard from '../components/ProductCard';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
   useEffect(() => {
     loadFeaturedProducts();
     loadTestimonials();
   }, []);
+
+  useEffect(() => {
+    if (activeCategory === 'all') setDisplayProducts(products);
+    else setDisplayProducts(products.filter((p) => p.category === activeCategory));
+  }, [activeCategory, products]);
 
   const loadFeaturedProducts = async () => {
     try {
@@ -21,7 +29,10 @@ export default function HomePage() {
         .eq('featured', true)
         .limit(20);
 
-      if (data) setProducts(data);
+      if (data) {
+        const withMrp = data.map((p: any) => ({ ...p, mrp: p.mrp ?? Math.round(p.price * 1.2) }));
+        setProducts(withMrp);
+      }
     } catch (error) {
       console.log('Products not available');
     }
@@ -40,10 +51,7 @@ export default function HomePage() {
     }
   };
 
-  const handleWhatsAppOrder = (product: Product) => {
-    const message = `Hi, I'm interested in ordering:\n\nProduct: ${product.name}\nPrice: ₹${product.price}\n\nPlease provide more details.`;
-    window.open(`https://wa.me/919000805105?text=${encodeURIComponent(message)}`, '_blank');
-  };
+  
 
   return (
     <div className="bg-white overflow-x-hidden">
@@ -71,33 +79,6 @@ export default function HomePage() {
                 >
                   <source src="/hv.mp4" type="video/mp4" />
                 </video>
-
-                {/* Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-60 flex flex-col items-center justify-center px-3 sm:px-4 py-6 md:py-0">
-                  <div className="text-center w-full">
-                    {/* Heading */}
-                    <h2 className="text-xl sm:text-3xl md:text-7xl font-anton mb-1 sm:mb-2 md:mb-4 text-white leading-tight">
-                      Where Detailing Becomes a Standard
-                    </h2>
-
-                    {/* Subtext */}
-                    <p className="text-xs sm:text-xs md:text-lg text-white max-w-full md:max-w-7xl mx-auto font-poppins font-bold mt-1 sm:mt-2 md:mt-4">
-                      From passionate enthusiasts to professional garages, we deliver the tools, chemicals, and confidence to perfect every finish.
-                    </p>
-
-                    {/* CTA */}
-                    <div className="mt-2 sm:mt-3 md:mt-4">
-                      <button
-                        onClick={() => navigate('/products')}
-                        className="w-fit sm:w-auto bg-red-600 hover:bg-red-700 hover:scale-105 text-white px-2.5 sm:px-10 py-1 sm:py-3 md:py-4 font-rajdhani font-bold inline-flex items-center justify-center space-x-0.5 sm:space-x-2 transition-all opacity-70 hover:opacity-100 rounded-lg md:rounded-2xl hover:shadow-2xl text-[10px] sm:text-lg md:text-4xl min-h-8 md:min-h-auto"
-                      >
-                        <span>Explore Products</span>
-                        <ArrowRight className="w-3 sm:w-6 md:w-10 h-3 sm:h-6 md:h-10" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                {/* End Overlay */}
               </div>
             </div>
           </div>
@@ -125,36 +106,36 @@ export default function HomePage() {
             </p>
           </div>
 
+          <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-6">
+            <button
+              onClick={() => setActiveCategory('all')}
+              className={`px-4 md:px-6 py-2 md:py-3 font-anton text-sm md:text-base rounded ${
+                activeCategory === 'all' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              All products
+            </button>
+            <button
+              onClick={() => setActiveCategory('car_chemicals')}
+              className={`px-4 md:px-6 py-2 md:py-3 font-anton text-sm md:text-base rounded ${
+                activeCategory === 'car_chemicals' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Detailing chem
+            </button>
+            <button
+              onClick={() => setActiveCategory('car_accessories')}
+              className={`px-4 md:px-6 py-2 md:py-3 font-anton text-sm md:text-base rounded ${
+                activeCategory === 'car_accessories' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Accessories
+            </button>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white border-2 border-gray-100 rounded-lg md:rounded-xl overflow-hidden hover:shadow-xl md:hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer"
-              >
-                <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-gray-400 text-3xl md:text-4xl mb-2">📦</div>
-                    <p className="text-gray-500 text-xs md:text-sm">Product</p>
-                  </div>
-                </div>
-                <div className="p-3 md:p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 text-sm md:text-base">{product.name}</h3>
-                  <p className="text-xs md:text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
-                  <div className="flex items-center justify-between mb-3 gap-2">
-                    <span className="text-red-600 font-bold text-base md:text-lg">₹{product.price}</span>
-                    <span className="bg-yellow-400 text-black text-xs px-2 py-1 rounded font-semibold">
-                      {product.category === 'car_chemicals' ? 'Chemical' : 'Accessory'}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleWhatsAppOrder(product)}
-                    className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 md:py-3 rounded-lg font-poppins flex items-center justify-center space-x-2 transition-all text-sm md:text-base font-semibold min-h-11"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span>Place Order</span>
-                  </button>
-                </div>
-              </div>
+            {displayProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
 
@@ -170,66 +151,59 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-12 md:py-16 bg-gray-50 overflow-x-hidden">
+      <div className="bg-white overflow-x-hidden">
+      <section className="py-12 md:py-16 bg-white">
         <div className="container mx-auto px-3 sm:px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center mb-12 md:mb-16">
-            <div>
-              <h2 className="text-2xl md:text-4xl font-anton mb-3 md:mb-6 text-red-600">Premium Car Accessories</h2>
-              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-6 leading-relaxed font-jakarta">
-                Elevate your detailing game with our professional-grade car accessories. From microfiber towels to foam cannons, pressure washers to detailing brushes - we stock everything you need to achieve showroom-quality results.
-              </p>
-              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-6 leading-relaxed font-jakarta">
-                Trusted by car wash centers, garages, showrooms, and professional detailers across India. Our accessories are built to withstand daily professional use while delivering consistent, exceptional results.
-              </p>
-              <div>
-                <button
-                  onClick={() => navigate('/products')}
-                  className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 hover:scale-105 text-black px-6 md:px-10 py-3 md:py-4 font-anton inline-flex items-center justify-center sm:justify-start space-x-2 transition-all text-xl md:text-2xl min-h-12 md:min-h-auto"
-                >
-                  <span>Explore Products</span>
-                  <ArrowRight className="w-5 md:w-6 h-5 md:h-6" />
-                </button>
-              </div>
-            </div>
-            <div>
-              <img
-                src="ba.jpeg"
-                alt="Car Accessories"
-                className="rounded-lg md:rounded-2xl shadow-lg md:shadow-2xl w-full h-auto object-cover"
-              />
-            </div>
-
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
-            <div className="order-2 md:order-1">
+            <div>
+              <h2 className="text-2xl md:text-4xl font-anton mb-3 md:mb-6 text-red-600">Who We Are</h2>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+                Car Detailing Mart (CDM) is more than just a store - we're a one-stop destination for all car detailing supply needs. Serving detailing professionals, car wash centers, garages, showrooms, and passionate car enthusiasts across India.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+                Located opposite the iconic Mahatma Gandhi Bus Stand (MGBS) in Hyderabad, CDM offers a comprehensive range of chemicals, tools, accessories, and detailing essentials under one roof.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 leading-relaxed font-jakarta">
+                We're not just a local shop - CDM is being built as a scalable national brand with a vision of establishing franchises and company-owned branches across India.
+              </p>
+            </div>
+            <div>
               <img
-                src="ba.png"
-                alt="Bike Accessories"
+                src="ab.png"
+                alt="About CDM"
                 className="rounded-lg md:rounded-2xl shadow-lg md:shadow-2xl w-full h-auto object-cover"
               />
-            </div>
-            <div className="order-1 md:order-2">
-              <h2 className="text-2xl md:text-4xl font-anton mb-3 md:mb-6 text-red-600">Premium Bike Accessories</h2>
-              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-6 leading-relaxed font-jakarta">
-                Don't forget your two-wheelers! Our specialized bike detailing accessories and chemicals are formulated to protect and enhance motorcycle finishes. From chain cleaners to chrome polish, we've got bikers covered.
-              </p>
-              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-6 leading-relaxed font-jakarta">
-                Whether you're a motorcycle enthusiast or run a bike service center, our products deliver the shine and protection your bikes deserve. Suitable for all types of motorcycles - sports bikes, cruisers, and everything in between.
-              </p>
-              <div>
-                <button
-                  onClick={() => navigate('/products')}
-                  className="w-full sm:w-auto bg-yellow-400 hover:bg-yellow-500 hover:scale-105 text-black px-6 md:px-10 py-3 md:py-4 font-anton inline-flex items-center justify-center sm:justify-start space-x-2 transition-all text-xl md:text-2xl min-h-12 md:min-h-auto"
-                  >
-                  <span>Explore Products</span>
-                  <ArrowRight className="w-5 md:w-6 h-5 md:h-6" />
-                </button>
-              </div>
             </div>
           </div>
         </div>
       </section>
+
+      <section className="py-12 md:py-16 bg-white">
+        <div className="container mx-auto px-3 sm:px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
+            <div className="order-2 md:order-1">
+              <img
+                src="a2.png"
+                alt="Our Vision"
+                className="rounded-lg md:rounded-2xl shadow-lg md:shadow-2xl w-full h-auto object-cover"
+              />
+            </div>
+            <div className="order-1 md:order-2">
+              <h2 className="text-2xl md:text-4xl font-anton mb-3 md:mb-6 text-red-600">Our Vision</h2>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+                To become India's leading car detailing supply brand, known for quality, reliability, and nationwide accessibility.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+                We envision a future where CDM has a presence in every major city across India, making professional-grade detailing supplies accessible to everyone - from individual enthusiasts to large-scale operations.
+              </p>
+              <p className="text-sm md:text-base text-gray-600 leading-relaxed font-jakarta">
+                Through franchises and company-owned branches, we're building a network that ensures consistent quality and service standards across the country.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
 
       <section className="py-12 md:py-16 bg-white overflow-x-hidden">
         <div className="container mx-auto px-3 sm:px-4">
@@ -280,7 +254,7 @@ export default function HomePage() {
 
       <section className="py-12 md:py-16 bg-gradient-to-br from-gray-900 to-black overflow-x-hidden">
         <div className="container mx-auto px-3 sm:px-4">
-          <h2 className="text-2xl md:text-4xl font-anton text-center mb-8 md:mb-12 text-white">What Our Customers Say</h2>
+          <h2 className="text-2xl md:text-4xl font-anton text-center mb-8 md:mb-12 text-white">Testimonials</h2>
 
           <div className="relative overflow-hidden">
             <div className="flex animate-scroll space-x-4 md:space-x-6">

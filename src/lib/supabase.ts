@@ -11,6 +11,7 @@ export interface Product {
   description: string;
   category: 'car_chemicals' | 'car_accessories';
   price: number;
+  mrp?: number;
   image_url: string;
   featured: boolean;
   created_at: string;

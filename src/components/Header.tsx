@@ -1,6 +1,7 @@
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useCart } from '../lib/CartContext';
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,7 +27,7 @@ export default function Header() {
             to="/"
             className="flex items-center space-x-2 cursor-pointer flex-shrink-0"
           >
-            <img src="/cmdlogo.svg" alt="CDM Logo" className="w-16 sm:w-20 md:w-28 h-16 sm:h-20 md:h-28" />
+            <img src="/cmdlogo.svg" alt="CDM Logo" className="w-16 sm:w-20 md:w-40 h-16 sm:h-10 md:h-20" />
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-1">
@@ -43,6 +44,13 @@ export default function Header() {
                 {item.name}
               </Link>
             ))}
+            <Link to="/cart" className="ml-2 px-3 md:px-4 py-2 md:py-3 rounded-lg transition-all min-h-11 flex items-center text-sm md:text-base text-gray-300 hover:bg-gray-800">
+              <div className="relative">
+                <ShoppingCart className="w-5 h-5" />
+                {/* cart count badge */}
+                <CartCount />
+              </div>
+            </Link>
           </nav>
 
           <button
@@ -77,4 +85,18 @@ export default function Header() {
       </div>
     </header>
   );
+}
+
+function CartCount() {
+  try {
+    const { totalItems } = useCart();
+    if (totalItems <= 0) return null;
+    return (
+      <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+        {totalItems}
+      </span>
+    );
+  } catch (e) {
+    return null;
+  }
 }

@@ -10,7 +10,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           <div>
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <img src="/cmdlogo.svg" alt="CDM Logo" className="w-20 md:w-28 h-20 md:h-28" />
+              <img src="/cmdlogo.svg" alt="CDM Logo" className="w-20 md:w-40 h-10 md:h-20" />
             </Link>
             <p className="text-gray-400 text-xs md:text-sm mb-4 font-montserrat font-semibold leading-relaxed">
               Your trusted partner for professional car detailing supplies. Serving professionals and enthusiasts across India.
@@ -85,23 +85,12 @@ export default function Footer() {
               <a href="#" className="bg-yellow-400 p-2.5 md:p-2 rounded-lg hover:bg-red-600 hover:scale-105 transition-colors min-h-11 min-w-11 flex items-center justify-center" aria-label="Instagram">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="https://x.com" aria-label="X" className="bg-yellow-400 p-2.5 md:p-2 rounded-lg hover:bg-red-600 hover:scale-105 transition-colors min-h-11 min-w-11 flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 300 300.251"
-                  className="w-5 h-5"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M178.57 127.15 290.27 0h-26.46l-97.03 110.38L89.34 0H0l117.13 166.93L0 300.25h26.46l102.4-116.59 81.8 116.59h89.34M36.01 19.54H76.66l187.13 262.13h-40.66" />
+              <a href="https://www.youtube.com/" aria-label="YouTube" className="bg-yellow-400 p-2.5 md:p-2 rounded-lg hover:bg-red-600 hover:scale-105 transition-colors min-h-11 min-w-11 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+                  <path d="M23.498 6.186a2.99 2.99 0 0 0-2.107-2.12C19.44 3.5 12 3.5 12 3.5s-7.44 0-9.391.566A2.99 2.99 0 0 0 .502 6.186 31.38 31.38 0 0 0 0 12a31.38 31.38 0 0 0 .502 5.814 2.99 2.99 0 0 0 2.107 2.12C4.56 20.5 12 20.5 12 20.5s7.44 0 9.391-.566a2.99 2.99 0 0 0 2.107-2.12A31.38 31.38 0 0 0 24 12a31.38 31.38 0 0 0-.502-5.814zM9.75 15.02V8.98L15.5 12l-5.75 3.02z" />
                 </svg>
               </a>
             </div>
-            <h4 className="text-white font-anton text-xs md:text-sm mb-2">Business Hours</h4>
-            <p className="text-gray-400 text-xs md:text-sm font-montserrat font-semibold leading-relaxed">
-              Open 24/7<br />
-              <span className="text-green-600 font-rajdhani font-bold">Online & In-Store</span>
-            </p>
           </div>
         </div>
 

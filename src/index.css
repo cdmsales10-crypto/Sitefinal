@@ -16,3 +16,11 @@
     display: none;
   }
 }
+
+/* Ensure no accidental scaling or transform applied to root */
+html, body, #root {
+  transform: none !important;
+  zoom: 1 !important;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
