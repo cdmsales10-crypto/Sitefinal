@@ -5,7 +5,7 @@ import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
 import HomePage from './pages/HomePage';
 import ProductsPage from './pages/ProductsPage';
-import CartPage from './pages/CartPage';
+import CartPage from './pages/CartPage.tsx';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import TestimonialsPage from './pages/TestimonialsPage';

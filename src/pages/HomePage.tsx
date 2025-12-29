@@ -16,6 +16,9 @@ export default function HomePage() {
     loadTestimonials();
   }, []);
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const heroVideoSrc = isMobile ? '/hvm.mp4' : '/hv.mp4';
+
   useEffect(() => {
     if (activeCategory === 'all') setDisplayProducts(products);
     else setDisplayProducts(products.filter((p) => p.category === activeCategory));
@@ -77,7 +80,7 @@ export default function HomePage() {
                   className="hero-video absolute inset-0 w-full h-full object-cover"
                   style={{ display: 'block' }}
                 >
-                  <source src="/hv.mp4" type="video/mp4" />
+                  <source src={heroVideoSrc} type="video/mp4" />
                 </video>
               </div>
             </div>

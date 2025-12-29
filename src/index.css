@@ -11,11 +11,7 @@
   -webkit-transform: translateZ(0);
 }
 
-@media (max-width: 768px) {
-  .hero-video {
-    display: none;
-  }
-}
+/* Removed mobile hiding so mobile can load its own video source */
 
 /* Ensure no accidental scaling or transform applied to root */
 html, body, #root {
