@@ -54,13 +54,22 @@ export default function Header() {
             </Link>
           </nav>
 
-          <button
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-800 min-h-11 min-w-11 flex items-center justify-center"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center space-x-2 lg:hidden">
+            <Link to="/cart" className="p-2 rounded-lg hover:bg-gray-800 min-h-11 min-w-11 flex items-center justify-center text-gray-300">
+              <div className="relative">
+                <ShoppingCart className="w-5 h-5" />
+                <CartCount />
+              </div>
+            </Link>
+
+            <button
+              className="p-2 rounded-lg hover:bg-gray-800 min-h-11 min-w-11 flex items-center justify-center"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {mobileMenuOpen && (
@@ -85,7 +94,7 @@ export default function Header() {
         )}
       </div>
       </header>
-      <div className="h-16 sm:h-20 md:h-24" />
+      <div className="h-16 sm:h-16 md:h-24" />
     </>
   );
 }
