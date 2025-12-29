@@ -20,25 +20,35 @@ export default function ProductCard({ product }: Props) {
         <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 text-sm md:text-base">{product.name}</h3>
         <p className="text-xs md:text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
         <div className="mb-3">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
             <div className="flex items-center space-x-2">
-              <span className="text-red-600 font-bold text-base md:text-lg font-archivo">₹{product.price}</span>
+              <span className="text-red-600 font-bold text-sm md:text-lg font-archivo">₹{product.price}</span>
               {product.mrp && product.mrp > product.price ? (
-                <span className="text-sm text-gray-500 font-poppins">
-                  M.R.P. <span className="line-through text-gray-400 font-poppins font-bold">₹{product.mrp}</span>
+                <span className="text-xs md:text-sm text-gray-500 font-poppins">
+                  M.R.P. <span className="line-through text-gray-400 font-poppins font-bold text-xs md:text-sm">₹{product.mrp}</span>
                 </span>
               ) : null}
             </div>
-            <div className="flex items-center space-x-2">
-              <button onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }} className="px-2 py-1 bg-gray-100 rounded font-archivo">-</button>
-              <div className="px-3 py-1 border rounded font-archivo">{qty}</div>
-              <button onClick={(e) => { e.stopPropagation(); setQty(qty + 1); }} className="px-2 py-1 bg-gray-100 rounded font-archivo">+</button>
+            <div className="flex items-center space-x-2 mt-2 md:mt-0">
+              <button
+                onClick={(e) => { e.stopPropagation(); setQty(Math.max(1, qty - 1)); }}
+                className="px-1 py-0.5 text-xs md:px-2 md:py-1 md:text-base bg-gray-100 rounded font-archivo"
+              >
+                -
+              </button>
+              <div className="px-2 py-0.5 md:px-3 md:py-1 border rounded text-xs md:text-base font-archivo">{qty}</div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setQty(qty + 1); }}
+                className="px-1 py-0.5 text-xs md:px-2 md:py-1 md:text-base bg-gray-100 rounded font-archivo"
+              >
+                +
+              </button>
             </div>
           </div>
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); addToCart(product, qty); }}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2.5 md:py-3 rounded-lg font-poppins flex items-center justify-center space-x-2 transition-all text-sm md:text-base font-semibold min-h-11"
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2 md:py-3 rounded-lg font-poppins flex items-center justify-center space-x-2 transition-all text-xs md:text-base font-semibold"
         >
           <span>Add to Cart</span>
         </button>
