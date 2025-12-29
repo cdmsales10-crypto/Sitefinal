@@ -22,6 +22,24 @@
     <meta property="og:image" content="https://images.pexels.com/photos/3354648/pexels-photo-3354648.jpeg" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:image" content="https://images.pexels.com/photos/3354648/pexels-photo-3354648.jpeg" />
+    <script>
+      (function(){
+        try {
+          const dpr = window.devicePixelRatio || 1;
+          if (dpr && Math.abs(dpr - 1) > 0.01) {
+            const scale = 1 / dpr;
+            const docEl = document.documentElement;
+            docEl.style.setProperty('transform-origin', '0 0', 'important');
+            docEl.style.setProperty('transform', 'scale(' + scale + ')', 'important');
+            docEl.style.setProperty('width', (dpr * 100) + '%', 'important');
+            document.body.style.setProperty('width', (dpr * 100) + '%', 'important');
+            document.body.style.setProperty('overflow-x', 'hidden', 'important');
+          }
+        } catch (e) {
+          console.error('scaling-fix error', e);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
