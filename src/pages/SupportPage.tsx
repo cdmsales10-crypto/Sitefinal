@@ -19,7 +19,7 @@ export default function SupportPage() {
               <div className="bg-red-600 w-16 h-16 rounded-full flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-2xl font-poppins font-bold mb-4 text-gray-800">Privacy Policy</h3>
+              <h3 className="text-2xl font-poppins font-bold mb-4 text-gray-800">Shipping & Delivery Policy</h3>
               <p className="text-gray-600 font-montserrat">
                 Learn how we collect, use, and protect your personal information
               </p>
@@ -40,57 +40,48 @@ export default function SupportPage() {
             <div className="bg-white border-2 border-gray-100 rounded-2xl p-8">
               <div className="flex items-center space-x-4 mb-6">
                 <Lock className="w-8 h-8 text-red-600" />
-                <h2 className="text-3xl font-bold text-red-600">Privacy Policy</h2>
-              </div>
-
-              <div className="space-y-6 text-gray-600">
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">Information We Collect</h3>
-                  <p className="leading-relaxed mb-2">
-                    At Car Detailing Mart, we collect only the information necessary to process your orders and provide excellent customer service:
-                  </p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li>Name and contact details (phone number, email address)</li>
-                    <li>Delivery address for shipping purposes</li>
-                    <li>Order history and product preferences</li>
-                    <li>Communication records via WhatsApp and phone calls</li>
-                  </ul>
+                <h2 className="text-3xl font-bold text-red-600">Shipping &amp; Delivery Policy</h2>
                 </div>
 
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">How We Use Your Information</h3>
-                  <p className="leading-relaxed mb-2">Your information is used exclusively for:</p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li>Processing and fulfilling your orders</li>
-                    <li>Communicating order updates and delivery status</li>
-                    <li>Providing customer support and product guidance</li>
-                    <li>Improving our products and services</li>
-                    <li>Sending promotional offers (only with your consent)</li>
-                  </ul>
-                </div>
+                <div className="space-y-6 text-gray-600">
+                  <div>
+                    <p className="leading-relaxed mb-2">
+                      At CDM, we are committed to delivering premium car care products across India with speed, transparency, and reliable communication.
+                    </p>
+                  </div>
 
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">Data Protection</h3>
-                  <p className="leading-relaxed">
-                    We implement industry-standard security measures to protect your personal information. Your data is stored securely and accessed only by authorized personnel for legitimate business purposes. We never sell, rent, or share your personal information with third parties for marketing purposes.
-                  </p>
-                </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">Order Processing</h3>
+                    <p className="leading-relaxed mb-2">All orders are processed after confirmation via WhatsApp.</p>
+                    <ul className="list-disc list-inside space-y-2 ml-4">
+                      <li>Orders are usually confirmed within 20 minutes of checkout during working hours.</li>
+                      <li>Once confirmed, orders are prepared for dispatch as per product availability.</li>
+                    </ul>
+                  </div>
 
-                <div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">Your Rights</h3>
-                  <p className="leading-relaxed mb-2">You have the right to:</p>
-                  <ul className="list-disc list-inside space-y-2 ml-4">
-                    <li>Access your personal information we hold</li>
-                    <li>Request correction of inaccurate data</li>
-                    <li>Request deletion of your data (subject to legal requirements)</li>
-                    <li>Opt-out of promotional communications at any time</li>
-                  </ul>
-                </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">Shipping &amp; Delivery</h3>
+                    <p className="leading-relaxed mb-2">CDM delivers PAN India.</p>
+                    <p className="leading-relaxed mb-2">Delivery timelines depend on the destination, courier partner, and service availability.</p>
+                    <p className="leading-relaxed mb-2">Dispatch and tracking details will be shared after order confirmation.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">Service Areas</h3>
+                    <p className="leading-relaxed mb-2">We currently ship to most serviceable pincodes across India.</p>
+                    <p className="leading-relaxed mb-2">In rare cases where courier service is unavailable, our team will inform the customer.</p>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">Delays</h3>
+                    <p className="leading-relaxed mb-2">Delivery delays may occur due to weather conditions, transportation issues, or operational reasons.</p>
+                    <p className="leading-relaxed mb-2">Customers will be notified promptly in case of any unexpected delay.</p>
+                  </div>
 
                 <div>
                   <h3 className="text-xl font-bold text-gray-800 mb-3">Contact Privacy Team</h3>
                   <p className="leading-relaxed">
-                    For privacy-related queries, contact us at <a href="mailto:info@cdmonline.in" className="text-red-600 hover:underline">info@cdmonline.in</a> or call <a href="tel:9000805105" className="text-red-600 hover:underline">9000805105</a>.
+                    For privacy-related queries, contact us at <a href="mailto:info@cdmonline.in" className="text-red-600 hover:underline font-urbanist font-bold">info@cdmonline.in</a> or call <a href="tel:9000805105" className="text-red-600 hover:underline font-urbanist font-bold">9000805105</a>.
                   </p>
                 </div>
               </div>
