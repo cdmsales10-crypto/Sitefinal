@@ -22,12 +22,12 @@ export default function AboutPage() {
               <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
                 Car Detailing Mart (CDM) is more than just a store - we're a one-stop destination for all car detailing supply needs. Serving detailing professionals, car wash centers, garages, showrooms, and passionate car enthusiasts across India.
               </p>
-              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+             {/* <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
                 Located opposite the iconic Mahatma Gandhi Bus Stand (MGBS) in Hyderabad, CDM offers a comprehensive range of chemicals, tools, accessories, and detailing essentials under one roof.
               </p>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed font-jakarta">
                 We're not just a local shop - CDM is being built as a scalable national brand with a vision of establishing franchises and company-owned branches across India.
-              </p>
+              </p> */}
             </div>
             <div>
               <img

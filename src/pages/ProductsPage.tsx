@@ -57,27 +57,27 @@ export default function ProductsPage() {
             onClick={() => setActiveCategory('all')}
             className={`px-6 md:px-8 py-2 md:py-3 font-anton transition-all text-sm md:text-base rounded min-h-10 md:min-h-auto ${
               activeCategory === 'all'
-                ? 'bg-red-600 text-white shadow-lg'
+                ? 'bg-red-600 text-white shadow-lg uppercase'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            All products
+            All
           </button>
           <button
             onClick={() => setActiveCategory('car_chemicals')}
             className={`px-6 md:px-8 py-2 md:py-3 font-anton transition-all text-sm md:text-base rounded min-h-10 md:min-h-auto ${
               activeCategory === 'car_chemicals'
-                ? 'bg-red-600 text-white shadow-lg'
+                ? 'bg-red-600 text-white shadow-lg uppercase'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Detailing chem
+            Detailing Chem
           </button>
           <button
             onClick={() => setActiveCategory('car_accessories')}
             className={`px-6 md:px-8 py-2 md:py-3 font-anton transition-all text-sm md:text-base rounded min-h-10 md:min-h-auto ${
               activeCategory === 'car_accessories'
-                ? 'bg-red-600 text-white shadow-lg'
+                ? 'bg-red-600 text-white shadow-lg uppercase'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -91,7 +91,7 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 auto-rows-fr">
           {filteredProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

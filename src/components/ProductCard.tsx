@@ -9,14 +9,14 @@ export default function ProductCard({ product }: Props) {
   const [qty, setQty] = useState<number>(1);
 
   return (
-    <div className="bg-white border-2 border-gray-100 rounded-lg md:rounded-xl overflow-hidden hover:shadow-xl md:hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer">
+    <div className="bg-white border-2 border-gray-100 rounded-lg md:rounded-xl overflow-hidden hover:shadow-xl md:hover:shadow-2xl transition-all transform hover:scale-105 cursor-pointer h-full flex flex-col">
       <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
         <div className="text-center">
           <div className="text-gray-400 text-3xl md:text-4xl mb-2">📦</div>
           <p className="text-gray-500 text-xs md:text-sm">Product</p>
         </div>
       </div>
-      <div className="p-3 md:p-4">
+      <div className="p-3 md:p-4 flex flex-col flex-1">
         <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2 text-sm md:text-base">{product.name}</h3>
         <p className="text-xs md:text-sm text-gray-600 mb-3 line-clamp-2">{product.description}</p>
         <div className="mb-3">
@@ -48,7 +48,7 @@ export default function ProductCard({ product }: Props) {
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); addToCart(product, qty); }}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2 md:py-3 rounded-lg font-poppins flex items-center justify-center space-x-2 transition-all text-xs md:text-base font-semibold"
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2 md:py-3 rounded-lg font-poppins flex items-center justify-center space-x-2 transition-all text-xs md:text-base font-semibold mt-auto"
         >
           <span>Add to Cart</span>
         </button>

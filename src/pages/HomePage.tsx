@@ -116,30 +116,30 @@ export default function HomePage() {
             <button
               onClick={() => setActiveCategory('all')}
               className={`px-4 md:px-6 py-2 md:py-3 font-anton text-sm md:text-base rounded ${
-                activeCategory === 'all' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                  activeCategory === 'all' ? 'bg-red-600 text-white uppercase' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
-              All products
+              All
             </button>
             <button
               onClick={() => setActiveCategory('car_chemicals')}
               className={`px-4 md:px-6 py-2 md:py-3 font-anton text-sm md:text-base rounded ${
-                activeCategory === 'car_chemicals' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                  activeCategory === 'car_chemicals' ? 'bg-red-600 text-white uppercase' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
-              Detailing chem
+              Detailing Chem
             </button>
             <button
               onClick={() => setActiveCategory('car_accessories')}
               className={`px-4 md:px-6 py-2 md:py-3 font-anton text-sm md:text-base rounded ${
-                activeCategory === 'car_accessories' ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                  activeCategory === 'car_accessories' ? 'bg-red-600 text-white uppercase' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Accessories
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 auto-rows-fr">
             {displayProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
@@ -166,12 +166,12 @@ export default function HomePage() {
               <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
                 Car Detailing Mart (CDM) is more than just a store - we're a one-stop destination for all car detailing supply needs. Serving detailing professionals, car wash centers, garages, showrooms, and passionate car enthusiasts across India.
               </p>
-              <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
+            {/* <p className="text-sm md:text-base text-gray-600 mb-3 md:mb-4 leading-relaxed font-jakarta">
                 Located opposite the iconic Mahatma Gandhi Bus Stand (MGBS) in Hyderabad, CDM offers a comprehensive range of chemicals, tools, accessories, and detailing essentials under one roof.
               </p>
               <p className="text-sm md:text-base text-gray-600 leading-relaxed font-jakarta">
                 We're not just a local shop - CDM is being built as a scalable national brand with a vision of establishing franchises and company-owned branches across India.
-              </p>
+              </p> */}
             </div>
             <div>
               <img

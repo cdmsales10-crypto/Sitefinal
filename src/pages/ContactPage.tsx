@@ -56,11 +56,8 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-bold font-poppins text-base md:text-xl mb-1 md:mb-2 text-gray-800">Address</h3>
                     <p className="text-gray-600 text-sm md:text-lg font-urbanist leading-relaxed">
-                      CDM (Car Detailing Mart)<br />
-                      Opposite Mahatma Gandhi Bus Stand (MGBS)<br />
                       Hyderabad, Telangana-500024
                     </p>
-                    <p className="text-xs md:text-sm text-gray-500 mt-1 font-rajdhani font-bold">Visit our store for in-person assistance</p>
                   </div>
                 </div>
 
