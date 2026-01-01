@@ -56,7 +56,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-bold font-poppins text-base md:text-xl mb-1 md:mb-2 text-gray-800">Address</h3>
                     <p className="text-gray-600 text-sm md:text-lg font-urbanist leading-relaxed">
-                      Hyderabad, Telangana-500024
+                      Telangana, India
                     </p>
                   </div>
                 </div>
