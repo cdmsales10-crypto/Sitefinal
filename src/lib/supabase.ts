@@ -1,34 +1,34 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Interfaces
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 export interface Product {
   id: string;
   name: string;
-  description: string;
-  category: 'car_chemicals' | 'car_accessories';
+  description?: string;
   price: number;
-  mrp?: number;
-  image_url: string;
   featured: boolean;
-  created_at: string;
+  stock: boolean;
+  mrp?: number;
+  image_url?: string;
+  category_slug: string;
+  created_at?: string;
 }
 
 export interface Testimonial {
   id: string;
   customer_name: string;
-  rating: number;
   comment: string;
-  created_at: string;
-}
-
-export interface WorkflowStep {
-  id: string;
-  step_number: number;
-  title: string;
-  description: string;
-  created_at: string;
+  rating: number;
+  created_at?: string;
 }
