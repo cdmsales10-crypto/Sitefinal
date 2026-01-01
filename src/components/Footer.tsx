@@ -10,7 +10,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           <div>
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <img src="/cmdlogo.svg" alt="CDM Logo" className="w-16 sm:w-35 sm:h-8 md:w-40 h-10 md:h-20" />
+              <img src="/cmdlogo.svg" alt="CDM Logo" className="w-16 sm:w-20 sm:h-5 md:w-40 h-10 md:h-20" />
             </Link>
             <p className="text-gray-400 text-xs md:text-sm mb-4 font-montserrat font-semibold leading-relaxed">
               Your trusted partner for professional car detailing supplies. Serving professionals and enthusiasts across India.
