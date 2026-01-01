@@ -28,7 +28,7 @@ export default function Header() {
             to="/"
             className="flex items-center space-x-2 cursor-pointer flex-shrink-0"
           >
-            <img src="/cmdlogo.svg" alt="CDM Logo" className="w-16 h-auto sm:w-28 md:w-40 h-16 sm:h-auto md:h-20" />
+            <img src="/cmdlogo.svg" alt="CDM Logo" className="w-32 h-auto sm:w-28 md:w-40 h-16 sm:h-auto md:h-20" />
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-1">
