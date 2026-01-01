@@ -12,6 +12,7 @@ import TestimonialsPage from './pages/TestimonialsPage';
 import ProcessPage from './pages/ProcessPage';
 import SupportPage from './pages/SupportPage';
 import { CartProvider } from './lib/CartContext';
+import AdminPage from "./pages/AdminPage";
 
 function ScrollToTop() {
   const location = useLocation();
@@ -40,6 +41,7 @@ function App() {
               <Route path="/testimonials" element={<TestimonialsPage />} />
               <Route path="/process" element={<ProcessPage />} />
               <Route path="/support" element={<SupportPage />} />
+              <Route path="/admin" element={<AdminPage />} />
             </Routes>
           </main>
           <Footer />
