@@ -179,11 +179,8 @@ export default function AdminPage() {
       e.preventDefault();
       setErrorMessage(null);
 
-      if (
-        !formData.name ||
-        formData.price === undefined ||
-        !formData.category_slug
-      ) {
+      // Validation
+      if (!formData.name || formData.price === undefined || !formData.category_slug) {
         setErrorMessage("Please fill in all required fields.");
         return;
       }
@@ -196,25 +193,34 @@ export default function AdminPage() {
       try {
         setUploading(true);
 
-        if (!editingProduct || formData.name !== editingProduct.name) {
-          const { data: existing } = await supabase
-            .from("products")
-            .select("id")
-            .eq("name", formData.name)
-            .single();
-
-          if (existing) {
-            setUploading(false);
-            setErrorMessage(
-              `A product with the name "${formData.name}" already exists.`
-            );
-            return;
-          }
+        // Duplicate Name Check
+        // Check if ANY product has this name
+        let query = supabase.from("products").select("id").eq("name", formData.name);
+        
+        // If editing, exclude current product ID from check
+        if (editingProduct) {
+             query = query.neq("id", editingProduct.id);
         }
 
-        let imageUrl = formData.image_url;
+        const { data: existing } = await query.single();
+
+        if (existing) {
+          setUploading(false);
+          setErrorMessage(
+            `A product with the name "${formData.name}" already exists.`
+          );
+          return;
+        }
+
+        // Image Handling Logic
+        let imageUrl = formData.image_url; // Default to existing URL
+        
         if (file) {
+          // If new file selected, upload it
           imageUrl = await uploadImage(file);
+        } else if (editingProduct && !imageUrl) {
+          // If editing and no new file, but formData lost the URL, restore original
+          imageUrl = editingProduct.image_url;
         }
 
         const payload = {
@@ -241,6 +247,7 @@ export default function AdminPage() {
           setSuccessMessage("Product added successfully!");
         }
 
+        // Cleanup
         setEditingProduct(null);
         setFile(null);
         const fileInput = document.getElementById(
@@ -280,7 +287,7 @@ export default function AdminPage() {
           {editingProduct && (
             <button
               type="button"
-              onClick={() => setEditingProduct(null)}
+              onClick={() => { setEditingProduct(null); setFile(null); }}
               className="text-sm text-gray-500 hover:text-red-600 flex items-center gap-1 font-bold bg-white px-3 py-1 rounded border border-gray-300 hover:border-red-300 transition-colors"
             >
               <X size={14} /> Cancel Edit
@@ -803,7 +810,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Categories Tab (Unchanged) */}
+        {/* Categories Tab */}
         {activeTab === "categories" && (
           <div className="animate-fade-in">
             <CategoryForm />
@@ -837,7 +844,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Testimonials Tab (Unchanged) */}
+        {/* Testimonials Tab */}
         {activeTab === "testimonials" && (
           <div className="animate-fade-in">
             <TestimonialForm />
