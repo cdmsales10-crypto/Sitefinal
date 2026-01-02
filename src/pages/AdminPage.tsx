@@ -1,18 +1,4 @@
-The issue with updating fields like `stock`, `featured`, and `image_url` often stems from how `Supabase` handles updates when the payload contains fields that might be `undefined` or when the logic for merging old and new data isn't explicit enough. Additionally, standard HTML checkbox behavior (where unchecked often results in `undefined` or just `false` which might be missed if logic checks for existence) can cause issues.
 
-Here is the corrected and robust `ProductForm` component logic.
-
-### Key Fixes Applied:
-1.  **Explicit Boolean Handling:** Checkboxes for `featured` and `stock` now use strict boolean logic (`checked={!!formData.featured}`) to ensure they never fall into an indeterminate state.
-2.  **Robust Image Logic:**
-    *   If a **new file** is selected (`file` state exists), it uploads and uses the new URL.
-    *   If **no new file** is selected, it explicitly uses `formData.image_url` (which is populated from `editingProduct` on mount).
-    *   Added a fallback: `image_url: finalImageUrl || null` to ensure we send `null` instead of an empty string or undefined if there's no image, which Supabase handles better.
-3.  **Payload Construction:** The payload now explicitly includes all fields every time to ensure the database row is fully updated to match the form state.
-
-### Updated Code
-
-```tsx
 import { useState, useEffect } from "react";
 import { supabase, Product, Category, Testimonial } from "../lib/supabase";
 import {
@@ -658,4 +644,4 @@ export default function AdminPage() {
     </div>
   );
 }
-```
+
