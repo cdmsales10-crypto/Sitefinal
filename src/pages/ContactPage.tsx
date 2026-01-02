@@ -43,7 +43,7 @@ export default function ContactPage() {
                   <div className="min-w-0">
                     <h3 className="font-bold font-poppins text-base md:text-xl mb-1 md:mb-2 text-gray-800">Email</h3>
                     <a href="mailto:info@cdmonline.in" className="text-gray-600 hover:text-red-600 text-sm md:text-lg font-urbanist break-all">
-                      info@cdmonline.in
+                      zirzo@autocare@gmail.com
                     </a>
                     <p className="text-xs md:text-sm text-gray-500 mt-1 font-rajdhani font-bold">Send us your inquiries anytime</p>
                   </div>
