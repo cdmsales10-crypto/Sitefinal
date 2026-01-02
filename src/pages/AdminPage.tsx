@@ -129,7 +129,7 @@ export default function AdminPage() {
       if (editingProduct?.id === id) {
         setEditingProduct(null);
       }
-      fetchData();
+      await fetchData();
     } catch (error: any) {
       setErrorMessage("Delete failed: " + error.message);
     }
@@ -143,7 +143,7 @@ export default function AdminPage() {
 
   // --- Sub-Components (Forms) ---
 
-  // 1. Product Form
+  // 1. Product Form - FIXED: Pass fetchData and setProducts as props
   const ProductForm = () => {
     const [formData, setFormData] = useState<Partial<Product>>({
       category_slug: categories[0]?.slug || "",
@@ -174,7 +174,7 @@ export default function AdminPage() {
         });
         setFile(null);
       }
-    }, [editingProduct, categories]);
+    }, [editingProduct]);
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -198,19 +198,16 @@ export default function AdminPage() {
       try {
         setUploading(true);
 
-        // Duplicate Name Check - FIXED
-        // Build query to check for duplicate names
+        // Duplicate Name Check
         let query = supabase
           .from("products")
           .select("id")
           .eq("name", formData.name.trim());
 
-        // If editing, exclude current product ID from check
         if (editingProduct) {
           query = query.neq("id", editingProduct.id);
         }
 
-        // Use .maybeSingle() instead of .single() to avoid error when no match
         const { data: existing, error: dupError } = await query.maybeSingle();
 
         if (dupError) {
@@ -227,18 +224,16 @@ export default function AdminPage() {
           return;
         }
 
-        // Image Handling Logic - FIXED
-        let imageUrl = formData.image_url || ""; // Default to existing URL
+        // Image Handling Logic
+        let imageUrl = formData.image_url || "";
 
         if (file) {
-          // If new file selected, upload it
           imageUrl = await uploadImage(file);
         } else if (editingProduct && !file) {
-          // If editing and no new file, preserve the original image URL
           imageUrl = editingProduct.image_url || "";
         }
 
-        // Build payload - FIXED MRP handling
+        // Build payload
         const payload = {
           name: formData.name.trim(),
           category_slug: formData.category_slug,
@@ -251,19 +246,41 @@ export default function AdminPage() {
         };
 
         if (editingProduct) {
-          const { error } = await supabase
+          // UPDATE OPERATION
+          const { data: updatedProduct, error } = await supabase
             .from("products")
             .update(payload)
-            .eq("id", editingProduct.id);
+            .eq("id", editingProduct.id)
+            .select()
+            .single();
+
           if (error) throw error;
+
+          // IMMEDIATE UI UPDATE - Update products state directly
+          setProducts((prevProducts) =>
+            prevProducts.map((p) =>
+              p.id === editingProduct.id ? { ...p, ...updatedProduct } : p
+            )
+          );
+
           setSuccessMessage("Product updated successfully!");
         } else {
-          const { error } = await supabase.from("products").insert([payload]);
+          // INSERT OPERATION
+          const { data: newProduct, error } = await supabase
+            .from("products")
+            .insert([payload])
+            .select()
+            .single();
+
           if (error) throw error;
+
+          // IMMEDIATE UI UPDATE - Add new product to state
+          setProducts((prevProducts) => [newProduct, ...prevProducts]);
+
           setSuccessMessage("Product added successfully!");
         }
 
-        // Cleanup - FIXED: Properly clear file input
+        // Cleanup
         setEditingProduct(null);
         setFile(null);
         setFormData({
@@ -276,15 +293,17 @@ export default function AdminPage() {
           description: "",
           image_url: "",
         });
-        
+
         const fileInput = document.getElementById(
           "product-file-input"
         ) as HTMLInputElement;
         if (fileInput) fileInput.value = "";
 
-        fetchData();
+        // Still fetch data to ensure consistency, but UI is already updated
+        await fetchData();
       } catch (error: any) {
         setErrorMessage(error.message || "Operation failed");
+        console.error("Error in handleSubmit:", error);
       } finally {
         setUploading(false);
       }
@@ -389,9 +408,9 @@ export default function AdminPage() {
               placeholder="Ex: 699"
               className="p-2 border rounded"
               onChange={(e) =>
-                setFormData({ 
-                  ...formData, 
-                  mrp: e.target.value ? Number(e.target.value) : 0 
+                setFormData({
+                  ...formData,
+                  mrp: e.target.value ? Number(e.target.value) : 0,
                 })
               }
               value={formData.mrp || ""}
@@ -505,32 +524,38 @@ export default function AdminPage() {
           setErrorMessage("Please fill in both fields.");
           return;
         }
-        
-        // FIXED: Use maybeSingle() instead of single()
+
         const { data: existing, error: dupError } = await supabase
           .from("categories")
           .select("id")
           .eq("slug", slug.trim())
           .maybeSingle();
-          
+
         if (dupError) {
           setErrorMessage("Error checking for duplicates: " + dupError.message);
           return;
         }
-        
+
         if (existing) {
           setErrorMessage(`Category ID "${slug}" already exists.`);
           return;
         }
-        
-        const { error } = await supabase
+
+        const { data: newCategory, error } = await supabase
           .from("categories")
-          .insert([{ name: name.trim(), slug: slug.trim() }]);
+          .insert([{ name: name.trim(), slug: slug.trim() }])
+          .select()
+          .single();
+
         if (error) throw error;
+
+        // IMMEDIATE UI UPDATE
+        setCategories((prev) => [...prev, newCategory]);
+
         setSuccessMessage("Category added successfully");
         setName("");
         setSlug("");
-        fetchData();
+        await fetchData();
       } catch (error: any) {
         setErrorMessage("Failed to add category: " + error.message);
       }
@@ -579,10 +604,10 @@ export default function AdminPage() {
 
   // 3. Testimonial Form
   const TestimonialForm = () => {
-    const [t, setT] = useState<Partial<Testimonial>>({ 
-      rating: 5, 
-      customer_name: "", 
-      comment: "" 
+    const [t, setT] = useState<Partial<Testimonial>>({
+      rating: 5,
+      customer_name: "",
+      comment: "",
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -592,18 +617,27 @@ export default function AdminPage() {
           setErrorMessage("Please fill in all fields.");
           return;
         }
-        
+
         const payload = {
           customer_name: t.customer_name.trim(),
           comment: t.comment.trim(),
           rating: t.rating || 5,
         };
-        
-        const { error } = await supabase.from("testimonials").insert([payload]);
+
+        const { data: newTestimonial, error } = await supabase
+          .from("testimonials")
+          .insert([payload])
+          .select()
+          .single();
+
         if (error) throw error;
+
+        // IMMEDIATE UI UPDATE
+        setTestimonials((prev) => [newTestimonial, ...prev]);
+
         setSuccessMessage("Testimonial added successfully");
         setT({ rating: 5, customer_name: "", comment: "" });
-        fetchData();
+        await fetchData();
       } catch (error: any) {
         setErrorMessage("Failed to add testimonial: " + error.message);
       }
