@@ -11,615 +11,523 @@ import {
   Pencil,
   X,
   Search,
+  Upload,
 } from "lucide-react";
 
+// --- Types ---
+interface ProductFormProps {
+  categories: Category[];
+  editingProduct: Product | null;
+  onCancel: () => void;
+  onSuccess: () => void;
+}
+
+// --- Helper: Image Upload ---
+const uploadImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append(
+    "upload_preset",
+    import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+  );
+
+  try {
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${
+        import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+      }/image/upload`,
+      { method: "POST", body: formData }
+    );
+
+    if (!res.ok) throw new Error("Cloudinary upload failed");
+
+    const data = await res.json();
+    return data.secure_url;
+  } catch (err: any) {
+    console.error(err);
+    throw new Error("Image upload failed: " + err.message);
+  }
+};
+
+// --- Component: Product Form ---
+// Defined OUTSIDE AdminPage to prevent re-mounting issues
+const ProductForm = ({
+  categories,
+  editingProduct,
+  onCancel,
+  onSuccess,
+}: ProductFormProps) => {
+  const [formData, setFormData] = useState<Partial<Product>>({
+    category_slug: "",
+    featured: false,
+    stock: true,
+    name: "",
+    price: 0,
+    mrp: 0,
+    description: "",
+    image_url: "",
+  });
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
+
+  // Sync Form Data with Editing Product
+  useEffect(() => {
+    if (editingProduct) {
+      setFormData({
+        ...editingProduct,
+        // Ensure category_slug is never undefined to prevent uncontrolled input warning
+        category_slug:
+          editingProduct.category_slug || categories[0]?.slug || "",
+      });
+    } else {
+      // Reset for Add Mode
+      setFormData({
+        category_slug: categories[0]?.slug || "",
+        featured: false,
+        stock: true,
+        name: "",
+        price: 0,
+        mrp: 0,
+        description: "",
+        image_url: "",
+      });
+    }
+    setFile(null); // Always clear file input on switch
+    setMessage(null);
+  }, [editingProduct, categories]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+
+    // Validation
+    if (!formData.name || formData.price === undefined || !formData.category_slug) {
+      setMessage({ type: "error", text: "Please fill in all required fields." });
+      return;
+    }
+
+    try {
+      setUploading(true);
+
+      // 1. Duplicate Name Check
+      let query = supabase
+        .from("products")
+        .select("id")
+        .eq("name", formData.name);
+
+      if (editingProduct) {
+        query = query.neq("id", editingProduct.id);
+      }
+
+      const { data: existing } = await query.single();
+
+      if (existing) {
+        setUploading(false);
+        setMessage({
+          type: "error",
+          text: `Product "${formData.name}" already exists.`,
+        });
+        return;
+      }
+
+      // 2. Image Handling
+      let finalImageUrl = formData.image_url;
+
+      if (file) {
+        // Case A: User selected a new file -> Upload it
+        finalImageUrl = await uploadImage(file);
+      } 
+      // Case B: No new file -> Keep existing 'formData.image_url' (already set via useEffect)
+
+      // 3. Prepare Payload
+      const payload = {
+        name: formData.name,
+        category_slug: formData.category_slug,
+        price: Number(formData.price),
+        mrp: formData.mrp ? Number(formData.mrp) : null,
+        description: formData.description,
+        image_url: finalImageUrl,
+        featured: formData.featured || false,
+        stock: formData.stock !== false,
+      };
+
+      // 4. Submit to Supabase
+      if (editingProduct) {
+        const { error } = await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", editingProduct.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("products").insert([payload]);
+        if (error) throw error;
+      }
+
+      // 5. Success
+      onSuccess(); // Triggers refresh in parent
+      
+    } catch (error: any) {
+      console.error(error);
+      setMessage({ type: "error", text: error.message || "Operation failed" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={`p-6 rounded-lg mb-8 grid gap-4 border shadow-sm transition-colors ${
+        editingProduct
+          ? "bg-yellow-50 border-yellow-200"
+          : "bg-gray-100 border-gray-200"
+      }`}
+    >
+      {/* Form Header */}
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-xl font-bold font-anton text-gray-800 flex items-center gap-2">
+          {editingProduct ? (
+            <>
+              <Pencil size={20} className="text-yellow-600" /> Edit Product
+            </>
+          ) : (
+            <>
+              <Plus size={20} className="text-red-600" /> Add New Product
+            </>
+          )}
+        </h3>
+        {editingProduct && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm text-gray-500 hover:text-red-600 flex items-center gap-1 font-bold bg-white px-3 py-1 rounded border border-gray-300 hover:border-red-300 transition-colors"
+          >
+            <X size={14} /> Cancel Edit
+          </button>
+        )}
+      </div>
+
+      {/* Messages */}
+      {message && (
+        <div
+          className={`p-3 rounded text-sm font-bold flex items-center gap-2 ${
+            message.type === "error"
+              ? "bg-red-100 text-red-700"
+              : "bg-green-100 text-green-700"
+          }`}
+        >
+          {message.type === "error" ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+          {message.text}
+        </div>
+      )}
+
+      {/* Fields Grid */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Name */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-bold text-gray-700">Name*</label>
+          <input
+            required
+            placeholder="Ex: Carnauba Wax"
+            className="p-2 border rounded"
+            onChange={(e) =>
+              setFormData({ ...formData, name: e.target.value })
+            }
+            value={formData.name || ""}
+          />
+        </div>
+
+        {/* Category */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-bold text-gray-700">Category*</label>
+          <select
+            className="p-2 border rounded bg-white"
+            value={formData.category_slug}
+            onChange={(e) =>
+              setFormData({ ...formData, category_slug: e.target.value })
+            }
+          >
+            {/* Fallback option if no categories exist */}
+            {categories.length === 0 && <option value="">Loading...</option>}
+            {categories.map((c) => (
+              <option key={c.id} value={c.slug}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Price */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-bold text-gray-700">Price (₹)*</label>
+          <input
+            required
+            type="number"
+            min="0"
+            placeholder="Ex: 499"
+            className="p-2 border rounded"
+            onChange={(e) =>
+              setFormData({ ...formData, price: Number(e.target.value) })
+            }
+            value={formData.price ?? 0}
+          />
+        </div>
+
+        {/* MRP */}
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-bold text-gray-700">
+            MRP (Optional)
+          </label>
+          <input
+            type="number"
+            min="0"
+            placeholder="Ex: 699"
+            className="p-2 border rounded"
+            onChange={(e) =>
+              setFormData({ ...formData, mrp: Number(e.target.value) })
+            }
+            value={formData.mrp ?? ""}
+          />
+        </div>
+
+        {/* Checkboxes */}
+        <div className="md:col-span-2 flex flex-wrap gap-4">
+          <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
+            <input
+              id="featured-checkbox"
+              type="checkbox"
+              className="w-5 h-5 accent-red-600 cursor-pointer"
+              checked={formData.featured || false}
+              onChange={(e) =>
+                setFormData({ ...formData, featured: e.target.checked })
+              }
+            />
+            <label
+              htmlFor="featured-checkbox"
+              className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2"
+            >
+              <Star size={16} className="text-yellow-500 fill-yellow-500" />{" "}
+              Best Seller
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
+            <input
+              id="stock-checkbox"
+              type="checkbox"
+              className="w-5 h-5 accent-black cursor-pointer"
+              checked={formData.stock === false}
+              onChange={(e) =>
+                setFormData({ ...formData, stock: !e.target.checked })
+              }
+            />
+            <label
+              htmlFor="stock-checkbox"
+              className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2 text-red-600"
+            >
+              <Slash size={16} /> Mark as "Out of Stock"
+            </label>
+          </div>
+        </div>
+
+        {/* Image Upload */}
+        <div className="flex flex-col gap-1 md:col-span-2">
+          <label className="text-sm font-bold text-gray-700">
+            Image {editingProduct && "(Upload new to replace)"}
+          </label>
+          <div className="flex gap-4 items-center">
+            {/* Image Preview */}
+            <div className="w-16 h-16 border rounded bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+               {file ? (
+                  // Preview new file
+                  <img src={URL.createObjectURL(file)} alt="New" className="w-full h-full object-cover" />
+               ) : formData.image_url ? (
+                  // Preview existing url
+                  <img src={formData.image_url} alt="Current" className="w-full h-full object-cover" />
+               ) : (
+                  <Upload size={20} className="text-gray-400" />
+               )}
+            </div>
+
+            <input
+              id="product-file-input"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="p-2 border rounded bg-white flex-1"
+            />
+          </div>
+        </div>
+      </div>
+
+      <textarea
+        placeholder="Description"
+        className="p-2 border rounded w-full"
+        onChange={(e) =>
+          setFormData({ ...formData, description: e.target.value })
+        }
+        value={formData.description || ""}
+      />
+
+      <button
+        disabled={uploading}
+        type="submit"
+        className={`${
+          editingProduct
+            ? "bg-yellow-500 hover:bg-yellow-600"
+            : "bg-red-600 hover:bg-red-700"
+        } text-white py-3 px-6 rounded flex items-center justify-center gap-2 font-bold transition-all disabled:opacity-50 text-lg shadow-md`}
+      >
+        {uploading ? (
+          "Processing..."
+        ) : editingProduct ? (
+          <>
+            <CheckCircle size={20} /> Update Product
+          </>
+        ) : (
+          <>
+            <Plus size={20} /> Add Product
+          </>
+        )}
+      </button>
+    </form>
+  );
+};
+
+// --- Main Page Component ---
 export default function AdminPage() {
-  // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
-
-  // Data State
-  const [activeTab, setActiveTab] = useState<
-    "products" | "categories" | "testimonials"
-  >("products");
+  const [activeTab, setActiveTab] = useState<"products" | "categories" | "testimonials">("products");
+  
+  // Data
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
-  // Search State
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Edit State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Feedback State
-  const [uploading, setUploading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  // Global Feedback
+  const [globalMessage, setGlobalMessage] = useState<string | null>(null);
 
-  // Clear messages after 3 seconds
   useEffect(() => {
-    if (errorMessage || successMessage) {
-      const timer = setTimeout(() => {
-        setErrorMessage(null);
-        setSuccessMessage(null);
-      }, 3000);
+    if (globalMessage) {
+      const timer = setTimeout(() => setGlobalMessage(null), 3000);
       return () => clearTimeout(timer);
     }
-  }, [errorMessage, successMessage]);
+  }, [globalMessage]);
 
-  // --- Login Logic ---
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordInput === import.meta.env.VITE_ADMIN_PASSWORD) {
       setIsAuthenticated(true);
       fetchData();
     } else {
-      setErrorMessage("Incorrect Password");
+      alert("Incorrect Password");
     }
   };
 
-  // --- Data Fetching ---
   const fetchData = async () => {
     try {
-      const { data: p, error: pError } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (pError) throw pError;
+      const { data: p } = await supabase.from("products").select("*").order("created_at", { ascending: false });
       if (p) setProducts(p);
 
-      const { data: c, error: cError } = await supabase
-        .from("categories")
-        .select("*");
-      if (cError) throw cError;
+      const { data: c } = await supabase.from("categories").select("*");
       if (c) setCategories(c);
 
-      const { data: t, error: tError } = await supabase
-        .from("testimonials")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (tError) throw tError;
+      const { data: t } = await supabase.from("testimonials").select("*").order("created_at", { ascending: false });
       if (t) setTestimonials(t);
-    } catch (error: any) {
-      console.error("Error fetching data:", error);
-      setErrorMessage("Failed to load data: " + error.message);
+    } catch (error) {
+      console.error("Error fetching data", error);
     }
   };
 
-  // --- Image Upload Helper ---
-  const uploadImage = async (file: File): Promise<string> => {
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append(
-      "upload_preset",
-      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-    );
-
-    try {
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${
-          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-        }/image/upload`,
-        { method: "POST", body: formData }
-      );
-
-      if (!res.ok) throw new Error("Cloudinary upload failed");
-
-      const data = await res.json();
-      setUploading(false);
-      return data.secure_url;
-    } catch (err: any) {
-      console.error(err);
-      setUploading(false);
-      throw new Error("Image upload failed: " + err.message);
-    }
-  };
-
-  // --- Handlers ---
   const handleDelete = async (table: string, id: string) => {
-    if (!confirm("Are you sure you want to delete this item?")) return;
+    if (!confirm("Delete this item?")) return;
     try {
       const { error } = await supabase.from(table).delete().eq("id", id);
       if (error) throw error;
-
-      setSuccessMessage("Item deleted successfully");
-      // If deleted product was being edited, clear edit state
-      if (editingProduct?.id === id) {
-        setEditingProduct(null);
-      }
+      setGlobalMessage("Item deleted successfully");
+      if (editingProduct?.id === id) setEditingProduct(null);
       fetchData();
-    } catch (error: any) {
-      setErrorMessage("Delete failed: " + error.message);
+    } catch (err: any) {
+      alert("Delete failed: " + err.message);
     }
   };
 
-  const startEditing = (product: Product) => {
-    setEditingProduct(product);
-    // Scroll to top to see form
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  // --- Sub-Components (Forms) ---
-
-  // 1. Product Form
-  const ProductForm = () => {
-    const [formData, setFormData] = useState<Partial<Product>>({
-      category_slug: categories[0]?.slug || "",
-      featured: false,
-      stock: true,
-      name: "",
-      price: 0,
-      mrp: 0,
-      description: "",
-      image_url: "",
-    });
-    const [file, setFile] = useState<File | null>(null);
-
-    useEffect(() => {
-      if (editingProduct) {
-        setFormData({ ...editingProduct });
-      } else {
-        setFormData({
-          category_slug: categories[0]?.slug || "",
-          featured: false,
-          stock: true,
-          name: "",
-          price: 0,
-          mrp: 0,
-          description: "",
-          image_url: "",
-        });
-        setFile(null);
-      }
-    }, [editingProduct, categories]);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setErrorMessage(null);
-
-      // Validation
-      if (!formData.name || formData.price === undefined || !formData.category_slug) {
-        setErrorMessage("Please fill in all required fields.");
-        return;
-      }
-
-      if (formData.price < 0) {
-        setErrorMessage("Price cannot be negative.");
-        return;
-      }
-
-      try {
-        setUploading(true);
-
-        // Duplicate Name Check
-        // Check if ANY product has this name
-        let query = supabase.from("products").select("id").eq("name", formData.name);
-        
-        // If editing, exclude current product ID from check
-        if (editingProduct) {
-             query = query.neq("id", editingProduct.id);
-        }
-
-        const { data: existing } = await query.single();
-
-        if (existing) {
-          setUploading(false);
-          setErrorMessage(
-            `A product with the name "${formData.name}" already exists.`
-          );
-          return;
-        }
-
-        // Image Handling Logic
-        let imageUrl = formData.image_url; // Default to existing URL
-        
-        if (file) {
-          // If new file selected, upload it
-          imageUrl = await uploadImage(file);
-        } else if (editingProduct && !imageUrl) {
-          // If editing and no new file, but formData lost the URL, restore original
-          imageUrl = editingProduct.image_url;
-        }
-
-        const payload = {
-          name: formData.name,
-          category_slug: formData.category_slug,
-          price: Number(formData.price),
-          mrp: formData.mrp ? Number(formData.mrp) : undefined,
-          description: formData.description,
-          image_url: imageUrl,
-          featured: formData.featured || false,
-          stock: formData.stock !== false,
-        };
-
-        if (editingProduct) {
-          const { error } = await supabase
-            .from("products")
-            .update(payload)
-            .eq("id", editingProduct.id);
-          if (error) throw error;
-          setSuccessMessage("Product updated successfully!");
-        } else {
-          const { error } = await supabase.from("products").insert([payload]);
-          if (error) throw error;
-          setSuccessMessage("Product added successfully!");
-        }
-
-        // Cleanup
-        setEditingProduct(null);
-        setFile(null);
-        const fileInput = document.getElementById(
-          "product-file-input"
-        ) as HTMLInputElement;
-        if (fileInput) fileInput.value = "";
-
-        fetchData();
-      } catch (error: any) {
-        setErrorMessage(error.message || "Operation failed");
-      } finally {
-        setUploading(false);
-      }
-    };
-
-    return (
-      <form
-        onSubmit={handleSubmit}
-        className={`p-6 rounded-lg mb-8 grid gap-4 border shadow-sm transition-colors ${
-          editingProduct
-            ? "bg-yellow-50 border-yellow-200"
-            : "bg-gray-100 border-gray-200"
-        }`}
-      >
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-xl font-bold font-anton text-gray-800 flex items-center gap-2">
-            {editingProduct ? (
-              <>
-                <Pencil size={20} className="text-yellow-600" /> Edit Product
-              </>
-            ) : (
-              <>
-                <Plus size={20} className="text-red-600" /> Add New Product
-              </>
-            )}
-          </h3>
-          {editingProduct && (
-            <button
-              type="button"
-              onClick={() => { setEditingProduct(null); setFile(null); }}
-              className="text-sm text-gray-500 hover:text-red-600 flex items-center gap-1 font-bold bg-white px-3 py-1 rounded border border-gray-300 hover:border-red-300 transition-colors"
-            >
-              <X size={14} /> Cancel Edit
-            </button>
-          )}
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-gray-700">Name*</label>
-            <input
-              required
-              placeholder="Ex: Carnauba Wax"
-              className="p-2 border rounded"
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              value={formData.name || ""}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-gray-700">Category*</label>
-            <select
-              className="p-2 border rounded"
-              value={formData.category_slug}
-              onChange={(e) =>
-                setFormData({ ...formData, category_slug: e.target.value })
-              }
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.slug}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-gray-700">
-              Price (₹)*
-            </label>
-            <input
-              required
-              type="number"
-              min="0"
-              placeholder="Ex: 499"
-              className="p-2 border rounded"
-              onChange={(e) =>
-                setFormData({ ...formData, price: Number(e.target.value) })
-              }
-              value={formData.price || ""}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-gray-700">
-              MRP (Optional)
-            </label>
-            <input
-              type="number"
-              min="0"
-              placeholder="Ex: 699"
-              className="p-2 border rounded"
-              onChange={(e) =>
-                setFormData({ ...formData, mrp: Number(e.target.value) })
-              }
-              value={formData.mrp || ""}
-            />
-          </div>
-
-          <div className="md:col-span-2 flex flex-wrap gap-4">
-            <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
-              <input
-                id="featured-checkbox"
-                type="checkbox"
-                className="w-5 h-5 accent-red-600 cursor-pointer"
-                checked={formData.featured || false}
-                onChange={(e) =>
-                  setFormData({ ...formData, featured: e.target.checked })
-                }
-              />
-              <label
-                htmlFor="featured-checkbox"
-                className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2"
-              >
-                <Star size={16} className="text-yellow-500 fill-yellow-500" />{" "}
-                Best Seller
-              </label>
-            </div>
-
-            <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
-              <input
-                id="stock-checkbox"
-                type="checkbox"
-                className="w-5 h-5 accent-black cursor-pointer"
-                checked={formData.stock === false}
-                onChange={(e) =>
-                  setFormData({ ...formData, stock: !e.target.checked })
-                }
-              />
-              <label
-                htmlFor="stock-checkbox"
-                className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2 text-red-600"
-              >
-                <Slash size={16} /> Mark as "Out of Stock"
-              </label>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1 md:col-span-2">
-            <label className="text-sm font-bold text-gray-700">
-              Image {editingProduct && "(Leave empty to keep current image)"}
-            </label>
-            <div className="flex gap-4 items-center">
-              {formData.image_url && (
-                <img
-                  src={formData.image_url}
-                  alt="Current"
-                  className="w-12 h-12 object-cover rounded border"
-                />
-              )}
-              <input
-                id="product-file-input"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="p-2 border rounded bg-white flex-1"
-              />
-            </div>
-          </div>
-        </div>
-        <textarea
-          placeholder="Description"
-          className="p-2 border rounded w-full"
-          onChange={(e) =>
-            setFormData({ ...formData, description: e.target.value })
-          }
-          value={formData.description || ""}
-        />
-        <button
-          disabled={uploading}
-          type="submit"
-          className={`${
-            editingProduct
-              ? "bg-yellow-500 hover:bg-yellow-600"
-              : "bg-red-600 hover:bg-red-700"
-          } text-white py-3 px-6 rounded flex items-center justify-center gap-2 font-bold transition-all disabled:opacity-50 text-lg shadow-md`}
-        >
-          {uploading ? (
-            "Processing..."
-          ) : editingProduct ? (
-            <>
-              <CheckCircle size={20} /> Update Product
-            </>
-          ) : (
-            <>
-              <Plus size={20} /> Add Product
-            </>
-          )}
-        </button>
-      </form>
-    );
-  };
-
-  // 2. Category Form (Unchanged)
+  // 2. Category Form (Internal Component for simplicity here)
   const CategoryForm = () => {
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try {
-        if (!name || !slug) return;
-        const { data: existing } = await supabase
-          .from("categories")
-          .select("id")
-          .eq("slug", slug)
-          .single();
-        if (existing) {
-          setErrorMessage(`Category ID "${slug}" already exists.`);
-          return;
+    
+    const submit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if(!name || !slug) return;
+        const { error } = await supabase.from("categories").insert([{ name, slug }]);
+        if(error) alert(error.message);
+        else {
+            setGlobalMessage("Category Added");
+            setName(""); setSlug("");
+            fetchData();
         }
-        const { error } = await supabase
-          .from("categories")
-          .insert([{ name, slug }]);
-        if (error) throw error;
-        setSuccessMessage("Category added successfully");
-        setName("");
-        setSlug("");
-        fetchData();
-      } catch (error: any) {
-        setErrorMessage("Failed to add category: " + error.message);
-      }
-    };
-
+    }
     return (
-      <form
-        onSubmit={handleSubmit}
-        className="bg-gray-100 p-6 rounded-lg mb-8 flex flex-col md:flex-row gap-4 items-end border border-gray-200 shadow-sm"
-      >
-        <div className="flex-1 w-full">
-          <label className="text-sm font-bold text-gray-700 block mb-1">
-            Display Name
-          </label>
-          <input
-            required
-            placeholder="Ex: Car Shampoos"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="p-2 border rounded w-full"
-          />
-        </div>
-        <div className="flex-1 w-full">
-          <label className="text-sm font-bold text-gray-700 block mb-1">
-            Unique ID (Slug)
-          </label>
-          <input
-            required
-            placeholder="Ex: car_shampoos"
-            value={slug}
-            onChange={(e) =>
-              setSlug(e.target.value.toLowerCase().replace(/\s+/g, "_"))
-            }
-            className="p-2 border rounded w-full"
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 font-bold h-[42px] w-full md:w-auto"
-        >
-          Add Category
-        </button>
-      </form>
-    );
-  };
+        <form onSubmit={submit} className="bg-gray-100 p-6 rounded-lg mb-8 flex flex-col md:flex-row gap-4 items-end border">
+             <div className="flex-1 w-full">
+                <label className="text-sm font-bold text-gray-700 block mb-1">Display Name</label>
+                <input required placeholder="Ex: Car Shampoos" value={name} onChange={e=>setName(e.target.value)} className="p-2 border rounded w-full"/>
+             </div>
+             <div className="flex-1 w-full">
+                <label className="text-sm font-bold text-gray-700 block mb-1">Slug ID</label>
+                <input required placeholder="car_shampoos" value={slug} onChange={e=>setSlug(e.target.value)} className="p-2 border rounded w-full"/>
+             </div>
+             <button className="bg-blue-600 text-white py-2 px-6 rounded font-bold">Add Category</button>
+        </form>
+    )
+  }
 
-  // 3. Testimonial Form (Unchanged)
+  // 3. Testimonial Form (Internal)
   const TestimonialForm = () => {
-    const [t, setT] = useState<Partial<Testimonial>>({ rating: 5 });
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      try {
-        const { error } = await supabase.from("testimonials").insert([t]);
-        if (error) throw error;
-        setSuccessMessage("Testimonial added successfully");
-        setT({ rating: 5, customer_name: "", comment: "" });
-        fetchData();
-      } catch (error: any) {
-        setErrorMessage("Failed to add testimonial: " + error.message);
+      const [t, setT] = useState({customer_name: "", rating: 5, comment: ""});
+      const submit = async (e: React.FormEvent) => {
+          e.preventDefault();
+          const { error } = await supabase.from("testimonials").insert([t]);
+          if(error) alert(error.message);
+          else {
+              setGlobalMessage("Testimonial Added");
+              setT({customer_name: "", rating: 5, comment: ""});
+              fetchData();
+          }
       }
-    };
+      return (
+        <form onSubmit={submit} className="bg-gray-100 p-6 rounded-lg mb-8 grid gap-4 border">
+            <div className="grid md:grid-cols-2 gap-4">
+                <input required placeholder="Name" className="p-2 border rounded" value={t.customer_name} onChange={e=>setT({...t, customer_name: e.target.value})} />
+                <input required type="number" min="1" max="5" className="p-2 border rounded" value={t.rating} onChange={e=>setT({...t, rating: Number(e.target.value)})} />
+            </div>
+            <textarea required placeholder="Comment" className="p-2 border rounded" value={t.comment} onChange={e=>setT({...t, comment: e.target.value})} />
+            <button className="bg-green-600 text-white py-2 px-4 rounded font-bold">Add Testimonial</button>
+        </form>
+      )
+  }
 
-    return (
-      <form
-        onSubmit={handleSubmit}
-        className="bg-gray-100 p-6 rounded-lg mb-8 grid gap-4 border border-gray-200 shadow-sm"
-      >
-        <h3 className="text-xl font-bold font-anton text-gray-800">
-          Add Testimonial
-        </h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <input
-            required
-            placeholder="Customer Name"
-            className="p-2 border rounded"
-            value={t.customer_name || ""}
-            onChange={(e) => setT({ ...t, customer_name: e.target.value })}
-          />
-          <input
-            required
-            type="number"
-            min="1"
-            max="5"
-            placeholder="Rating (1-5)"
-            className="p-2 border rounded"
-            value={t.rating || 5}
-            onChange={(e) => setT({ ...t, rating: Number(e.target.value) })}
-          />
-        </div>
-        <textarea
-          required
-          placeholder="Comment"
-          className="p-2 border rounded w-full"
-          value={t.comment || ""}
-          onChange={(e) => setT({ ...t, comment: e.target.value })}
-        />
-        <button
-          type="submit"
-          className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 font-bold"
-        >
-          Add Testimonial
-        </button>
-      </form>
-    );
-  };
-
-  // --- Search Logic ---
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // --- Main Render ---
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded-xl shadow-2xl w-96 border border-gray-100">
-          <h1 className="text-3xl font-anton text-center mb-6 text-red-600">
-            Admin Access
-          </h1>
-
-          {errorMessage && (
-            <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm flex items-center gap-2">
-              <AlertCircle size={16} /> {errorMessage}
-            </div>
-          )}
-
+          <h1 className="text-3xl font-anton text-center mb-6 text-red-600">Admin Access</h1>
           <form onSubmit={handleLogin}>
-            <input
-              type="password"
-              placeholder="Enter Admin Password"
-              value={passwordInput}
-              onChange={(e) => setPasswordInput(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-            <button
-              type="submit"
-              className="w-full bg-black text-white py-3 font-bold hover:bg-gray-800 rounded transition-all transform active:scale-95"
-            >
-              LOGIN
-            </button>
+            <input type="password" placeholder="Password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} className="w-full p-3 border border-gray-300 rounded mb-4" />
+            <button className="w-full bg-black text-white py-3 font-bold rounded">LOGIN</button>
           </form>
         </div>
       </div>
@@ -628,256 +536,108 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Toast Messages */}
-      {(errorMessage || successMessage) && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] min-w-[300px] text-center shadow-lg rounded-lg overflow-hidden animate-bounce-in">
-          {errorMessage && (
-            <div className="bg-red-600 text-white p-4 font-bold flex items-center justify-center gap-2">
-              <AlertCircle /> {errorMessage}
-            </div>
-          )}
-          {successMessage && (
-            <div className="bg-green-600 text-white p-4 font-bold flex items-center justify-center gap-2">
-              <CheckCircle /> {successMessage}
-            </div>
-          )}
+      {globalMessage && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white p-4 font-bold rounded shadow-lg flex gap-2">
+            <CheckCircle /> {globalMessage}
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-black text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-        <h1 className="text-2xl font-anton tracking-wide">
-          CDM <span className="text-red-600">ADMIN</span>
-        </h1>
-        <button
-          onClick={() => setIsAuthenticated(false)}
-          className="flex items-center gap-2 text-gray-300 hover:text-white bg-gray-800 px-4 py-2 rounded transition-all"
-        >
-          <LogOut size={18} /> <span className="hidden sm:inline">Logout</span>
+      <div className="bg-black text-white p-4 flex justify-between items-center sticky top-0 z-40 shadow-md">
+        <h1 className="text-2xl font-anton">CDM <span className="text-red-600">ADMIN</span></h1>
+        <button onClick={() => setIsAuthenticated(false)} className="flex items-center gap-2 text-gray-300 hover:text-white">
+          <LogOut size={18} /> Logout
         </button>
       </div>
 
       <div className="container mx-auto p-4 md:p-8 max-w-5xl">
         {/* Tabs */}
-        <div className="flex gap-2 md:gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
+        <div className="flex gap-4 mb-8 border-b overflow-x-auto">
           {["products", "categories", "testimonials"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab as any)}
-              className={`pb-3 px-6 font-bold capitalize whitespace-nowrap transition-all ${
-                activeTab === tab
-                  ? "border-b-4 border-red-600 text-red-600"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-            >
+            <button key={tab} onClick={() => setActiveTab(tab as any)} className={`pb-3 px-6 font-bold capitalize ${activeTab === tab ? "border-b-4 border-red-600 text-red-600" : "text-gray-500"}`}>
               {tab}
             </button>
           ))}
         </div>
 
-        {/* Content */}
         {activeTab === "products" && (
           <div className="animate-fade-in">
-            <ProductForm />
+            {/* PRODUCT FORM COMPONENT */}
+            <ProductForm 
+                categories={categories}
+                editingProduct={editingProduct}
+                onCancel={() => setEditingProduct(null)}
+                onSuccess={() => {
+                    setEditingProduct(null);
+                    setGlobalMessage(editingProduct ? "Product Updated" : "Product Added");
+                    fetchData();
+                }}
+            />
 
+            {/* List & Search */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-              <h3 className="font-bold text-gray-500">
-                Existing Products ({filteredProducts.length})
-              </h3>
-
-              {/* Search Bar */}
+              <h3 className="font-bold text-gray-500">Existing Products ({filteredProducts.length})</h3>
               <div className="relative w-full md:w-64">
-                <Search
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-full text-sm" />
+                {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"><X size={14} /></button>}
               </div>
             </div>
 
             <div className="grid gap-4">
               {filteredProducts.map((p) => (
-                <div
-                  key={p.id}
-                  className={`flex items-center justify-between border p-4 rounded-lg hover:shadow-md transition-shadow bg-white ${
-                    editingProduct?.id === p.id
-                      ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50"
-                      : "border-gray-200"
-                  }`}
-                >
+                <div key={p.id} className={`flex items-center justify-between border p-4 rounded-lg bg-white ${editingProduct?.id === p.id ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50" : ""}`}>
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden relative">
-                      {p.image_url ? (
-                        <img
-                          src={p.image_url}
-                          alt={p.name}
-                          className={`w-full h-full object-cover ${
-                            p.stock === false ? "grayscale opacity-50" : ""
-                          }`}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                          No Img
-                        </div>
-                      )}
-                      {p.featured && (
-                        <div
-                          className="absolute top-0 right-0 bg-yellow-400 text-xs p-1 rounded-bl shadow-sm z-10"
-                          title="Best Seller"
-                        >
-                          <Star size={10} className="fill-black text-black" />
-                        </div>
-                      )}
-                      {p.stock === false && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] font-bold text-center leading-none">
-                          NO STOCK
-                        </div>
-                      )}
+                    <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden relative">
+                        {p.image_url ? <img src={p.image_url} className={`w-full h-full object-cover ${!p.stock && "grayscale opacity-50"}`} /> : <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">No Img</div>}
+                        {!p.stock && <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] font-bold">NO STOCK</div>}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-bold text-lg text-gray-800">
-                          {p.name}
-                        </h4>
-                        {p.featured && (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-bold border border-yellow-200">
-                            Best Seller
-                          </span>
-                        )}
-                        {p.stock === false && (
-                          <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold border border-red-200">
-                            Out of Stock
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-500 font-mono">
-                        ₹{p.price} <span className="mx-2">•</span>{" "}
-                        {p.category_slug}
-                      </p>
+                        <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-lg">{p.name}</h4>
+                            {p.featured && <Star size={12} className="fill-yellow-500 text-yellow-500" />}
+                        </div>
+                        <p className="text-sm text-gray-500">₹{p.price} • {p.category_slug}</p>
                     </div>
                   </div>
-
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => startEditing(p)}
-                      className="text-blue-500 hover:bg-blue-50 p-2 rounded transition-colors"
-                      title="Edit Product"
-                    >
-                      <Pencil size={20} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete("products", p.id)}
-                      className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
-                      title="Delete Product"
-                    >
-                      <Trash2 size={20} />
-                    </button>
+                    <button onClick={() => { setEditingProduct(p); window.scrollTo({top:0, behavior:'smooth'}); }} className="text-blue-500 p-2 hover:bg-blue-50 rounded"><Pencil size={20} /></button>
+                    <button onClick={() => handleDelete("products", p.id)} className="text-red-500 p-2 hover:bg-red-50 rounded"><Trash2 size={20} /></button>
                   </div>
                 </div>
               ))}
-              {filteredProducts.length === 0 && (
-                <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                  <p className="text-gray-400 mb-2">
-                    {searchQuery
-                      ? `No products match "${searchQuery}"`
-                      : "No products found."}
-                  </p>
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="text-sm text-red-600 font-bold hover:underline"
-                    >
-                      Clear Search
-                    </button>
-                  )}
-                </div>
-              )}
+              {filteredProducts.length === 0 && <p className="text-center text-gray-400 py-8">No products found.</p>}
             </div>
           </div>
         )}
 
-        {/* Categories Tab */}
         {activeTab === "categories" && (
-          <div className="animate-fade-in">
-            <CategoryForm />
-            <h3 className="font-bold text-gray-500 mb-4">
-              Existing Categories ({categories.length})
-            </h3>
-            <div className="grid gap-3">
-              {categories.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex justify-between items-center border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all"
-                >
-                  <div>
-                    <span className="font-bold text-lg text-gray-800 block">
-                      {c.name}
-                    </span>
-                    <span className="text-gray-500 text-sm font-mono bg-gray-100 px-2 py-1 rounded">
-                      ID: {c.slug}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleDelete("categories", c.id)}
-                    className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
-                    title="Delete Category"
-                  >
-                    <Trash2 size={20} />
-                  </button>
+            <div>
+                <CategoryForm />
+                <div className="grid gap-3">
+                    {categories.map(c => (
+                        <div key={c.id} className="flex justify-between p-4 border rounded bg-white">
+                            <div><span className="font-bold block">{c.name}</span><span className="text-sm text-gray-500">{c.slug}</span></div>
+                            <button onClick={()=>handleDelete("categories", c.id)} className="text-red-500"><Trash2/></button>
+                        </div>
+                    ))}
                 </div>
-              ))}
             </div>
-          </div>
         )}
 
-        {/* Testimonials Tab */}
         {activeTab === "testimonials" && (
-          <div className="animate-fade-in">
-            <TestimonialForm />
-            <h3 className="font-bold text-gray-500 mb-4">
-              Existing Testimonials ({testimonials.length})
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {testimonials.map((t) => (
-                <div
-                  key={t.id}
-                  className="border border-gray-200 p-6 rounded-lg relative hover:shadow-lg transition-shadow bg-white"
-                >
-                  <button
-                    onClick={() => handleDelete("testimonials", t.id)}
-                    className="absolute top-4 right-4 text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                  <p className="italic text-gray-600 mb-4 text-lg">
-                    "{t.comment}"
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-800">
-                      {t.customer_name}
-                    </span>
-                    <span className="text-yellow-500 text-sm font-bold">
-                      ★ {t.rating}/5
-                    </span>
-                  </div>
+            <div>
+                <TestimonialForm />
+                <div className="grid md:grid-cols-2 gap-4">
+                    {testimonials.map(t => (
+                        <div key={t.id} className="border p-4 rounded bg-white relative">
+                            <button onClick={()=>handleDelete("testimonials", t.id)} className="absolute top-2 right-2 text-red-500"><Trash2 size={16}/></button>
+                            <p className="italic text-gray-600 mb-2">"{t.comment}"</p>
+                            <div className="font-bold text-sm">{t.customer_name} <span className="text-yellow-500">★ {t.rating}</span></div>
+                        </div>
+                    ))}
                 </div>
-              ))}
             </div>
-          </div>
         )}
       </div>
     </div>
