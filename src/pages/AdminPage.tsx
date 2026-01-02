@@ -143,7 +143,7 @@ export default function AdminPage() {
 
   // --- Sub-Components (Forms) ---
 
-  // 1. Product Form - FIXED: Pass fetchData and setProducts as props
+  // 1. Product Form
   const ProductForm = () => {
     const [formData, setFormData] = useState<Partial<Product>>({
       category_slug: categories[0]?.slug || "",
@@ -157,7 +157,7 @@ export default function AdminPage() {
     });
     const [file, setFile] = useState<File | null>(null);
 
-    // Reset form when editingProduct or categories change
+    // Reset form when editingProduct changes
     useEffect(() => {
       if (editingProduct) {
         setFormData({ ...editingProduct });
@@ -246,22 +246,24 @@ export default function AdminPage() {
         };
 
         if (editingProduct) {
-          // UPDATE OPERATION
+          // UPDATE OPERATION - FIXED: Use maybeSingle()
           const { data: updatedProduct, error } = await supabase
             .from("products")
             .update(payload)
             .eq("id", editingProduct.id)
             .select()
-            .single();
+            .maybeSingle();
 
           if (error) throw error;
 
-          // IMMEDIATE UI UPDATE - Update products state directly
-          setProducts((prevProducts) =>
-            prevProducts.map((p) =>
-              p.id === editingProduct.id ? { ...p, ...updatedProduct } : p
-            )
-          );
+          // IMMEDIATE UI UPDATE
+          if (updatedProduct) {
+            setProducts((prevProducts) =>
+              prevProducts.map((p) =>
+                p.id === editingProduct.id ? { ...p, ...updatedProduct } : p
+              )
+            );
+          }
 
           setSuccessMessage("Product updated successfully!");
         } else {
@@ -274,8 +276,10 @@ export default function AdminPage() {
 
           if (error) throw error;
 
-          // IMMEDIATE UI UPDATE - Add new product to state
-          setProducts((prevProducts) => [newProduct, ...prevProducts]);
+          // IMMEDIATE UI UPDATE
+          if (newProduct) {
+            setProducts((prevProducts) => [newProduct, ...prevProducts]);
+          }
 
           setSuccessMessage("Product added successfully!");
         }
@@ -299,7 +303,7 @@ export default function AdminPage() {
         ) as HTMLInputElement;
         if (fileInput) fileInput.value = "";
 
-        // Still fetch data to ensure consistency, but UI is already updated
+        // Fetch data to ensure consistency
         await fetchData();
       } catch (error: any) {
         setErrorMessage(error.message || "Operation failed");
@@ -550,7 +554,9 @@ export default function AdminPage() {
         if (error) throw error;
 
         // IMMEDIATE UI UPDATE
-        setCategories((prev) => [...prev, newCategory]);
+        if (newCategory) {
+          setCategories((prev) => [...prev, newCategory]);
+        }
 
         setSuccessMessage("Category added successfully");
         setName("");
@@ -633,7 +639,9 @@ export default function AdminPage() {
         if (error) throw error;
 
         // IMMEDIATE UI UPDATE
-        setTestimonials((prev) => [newTestimonial, ...prev]);
+        if (newTestimonial) {
+          setTestimonials((prev) => [newTestimonial, ...prev]);
+        }
 
         setSuccessMessage("Testimonial added successfully");
         setT({ rating: 5, customer_name: "", comment: "" });
