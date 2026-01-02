@@ -1,3 +1,18 @@
+The issue with updating fields like `stock`, `featured`, and `image_url` often stems from how `Supabase` handles updates when the payload contains fields that might be `undefined` or when the logic for merging old and new data isn't explicit enough. Additionally, standard HTML checkbox behavior (where unchecked often results in `undefined` or just `false` which might be missed if logic checks for existence) can cause issues.
+
+Here is the corrected and robust `ProductForm` component logic.
+
+### Key Fixes Applied:
+1.  **Explicit Boolean Handling:** Checkboxes for `featured` and `stock` now use strict boolean logic (`checked={!!formData.featured}`) to ensure they never fall into an indeterminate state.
+2.  **Robust Image Logic:**
+    *   If a **new file** is selected (`file` state exists), it uploads and uses the new URL.
+    *   If **no new file** is selected, it explicitly uses `formData.image_url` (which is populated from `editingProduct` on mount).
+    *   Added a fallback: `image_url: finalImageUrl || null` to ensure we send `null` instead of an empty string or undefined if there's no image, which Supabase handles better.
+3.  **Payload Construction:** The payload now explicitly includes all fields every time to ensure the database row is fully updated to match the form state.
+
+### Updated Code
+
+```tsx
 import { useState, useEffect } from "react";
 import { supabase, Product, Category, Testimonial } from "../lib/supabase";
 import {
@@ -50,13 +65,13 @@ const uploadImage = async (file: File): Promise<string> => {
 };
 
 // --- Component: Product Form ---
-// Defined OUTSIDE AdminPage to prevent re-mounting issues
 const ProductForm = ({
   categories,
   editingProduct,
   onCancel,
   onSuccess,
 }: ProductFormProps) => {
+  // Initialize form data
   const [formData, setFormData] = useState<Partial<Product>>({
     category_slug: "",
     featured: false,
@@ -67,6 +82,7 @@ const ProductForm = ({
     description: "",
     image_url: "",
   });
+  
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{
@@ -79,9 +95,11 @@ const ProductForm = ({
     if (editingProduct) {
       setFormData({
         ...editingProduct,
-        // Ensure category_slug is never undefined to prevent uncontrolled input warning
-        category_slug:
-          editingProduct.category_slug || categories[0]?.slug || "",
+        category_slug: editingProduct.category_slug || categories[0]?.slug || "",
+        // Ensure booleans are strictly true/false, not null/undefined
+        featured: !!editingProduct.featured,
+        stock: editingProduct.stock !== false, // Default to true if undefined
+        image_url: editingProduct.image_url || "",
       });
     } else {
       // Reset for Add Mode
@@ -98,7 +116,7 @@ const ProductForm = ({
     }
     setFile(null); // Always clear file input on switch
     setMessage(null);
-  }, [editingProduct, categories]);
+  }, [editingProduct, categories]); // Depend on categories to set default slug if needed
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,15 +132,10 @@ const ProductForm = ({
       setUploading(true);
 
       // 1. Duplicate Name Check
-      let query = supabase
-        .from("products")
-        .select("id")
-        .eq("name", formData.name);
-
+      let query = supabase.from("products").select("id").eq("name", formData.name);
       if (editingProduct) {
         query = query.neq("id", editingProduct.id);
       }
-
       const { data: existing } = await query.single();
 
       if (existing) {
@@ -135,24 +148,24 @@ const ProductForm = ({
       }
 
       // 2. Image Handling
-      let finalImageUrl = formData.image_url;
+      let finalImageUrl = formData.image_url; // Start with existing URL from state
 
       if (file) {
-        // Case A: User selected a new file -> Upload it
+        // If a new file is selected, upload it and use the NEW url
         finalImageUrl = await uploadImage(file);
-      } 
-      // Case B: No new file -> Keep existing 'formData.image_url' (already set via useEffect)
-
+      }
+      
       // 3. Prepare Payload
+      // We construct the payload explicitly to ensure all fields (including booleans) are sent correctly
       const payload = {
         name: formData.name,
         category_slug: formData.category_slug,
         price: Number(formData.price),
         mrp: formData.mrp ? Number(formData.mrp) : null,
         description: formData.description,
-        image_url: finalImageUrl,
-        featured: formData.featured || false,
-        stock: formData.stock !== false,
+        image_url: finalImageUrl || null, // Send null if string is empty
+        featured: !!formData.featured,    // Force boolean
+        stock: !!formData.stock,          // Force boolean
       };
 
       // 4. Submit to Supabase
@@ -161,6 +174,7 @@ const ProductForm = ({
           .from("products")
           .update(payload)
           .eq("id", editingProduct.id);
+
         if (error) throw error;
       } else {
         const { error } = await supabase.from("products").insert([payload]);
@@ -168,7 +182,7 @@ const ProductForm = ({
       }
 
       // 5. Success
-      onSuccess(); // Triggers refresh in parent
+      onSuccess(); 
       
     } catch (error: any) {
       console.error(error);
@@ -296,38 +310,36 @@ const ProductForm = ({
 
         {/* Checkboxes */}
         <div className="md:col-span-2 flex flex-wrap gap-4">
-          <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
+          <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px] cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, featured: !prev.featured }))}>
             <input
               id="featured-checkbox"
               type="checkbox"
               className="w-5 h-5 accent-red-600 cursor-pointer"
-              checked={formData.featured || false}
-              onChange={(e) =>
-                setFormData({ ...formData, featured: e.target.checked })
-              }
+              checked={!!formData.featured}
+              onChange={() => {}} // Handled by parent div for easier clicking
             />
             <label
               htmlFor="featured-checkbox"
               className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2"
+              onClick={(e) => e.stopPropagation()} // Prevent double toggle
             >
               <Star size={16} className="text-yellow-500 fill-yellow-500" />{" "}
               Best Seller
             </label>
           </div>
 
-          <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
+          <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px] cursor-pointer" onClick={() => setFormData(prev => ({ ...prev, stock: !prev.stock }))}>
             <input
               id="stock-checkbox"
               type="checkbox"
               className="w-5 h-5 accent-black cursor-pointer"
-              checked={formData.stock === false}
-              onChange={(e) =>
-                setFormData({ ...formData, stock: !e.target.checked })
-              }
+              checked={!formData.stock} // Checked means "Out of Stock" (stock is false)
+              onChange={() => {}} // Handled by parent div
             />
             <label
               htmlFor="stock-checkbox"
               className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2 text-red-600"
+               onClick={(e) => e.stopPropagation()}
             >
               <Slash size={16} /> Mark as "Out of Stock"
             </label>
@@ -341,25 +353,28 @@ const ProductForm = ({
           </label>
           <div className="flex gap-4 items-center">
             {/* Image Preview */}
-            <div className="w-16 h-16 border rounded bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+            <div className="w-16 h-16 border rounded bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0 relative group">
                {file ? (
-                  // Preview new file
                   <img src={URL.createObjectURL(file)} alt="New" className="w-full h-full object-cover" />
                ) : formData.image_url ? (
-                  // Preview existing url
                   <img src={formData.image_url} alt="Current" className="w-full h-full object-cover" />
                ) : (
                   <Upload size={20} className="text-gray-400" />
                )}
             </div>
 
-            <input
-              id="product-file-input"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="p-2 border rounded bg-white flex-1"
-            />
+            <div className="flex-1">
+                <input
+                id="product-file-input"
+                type="file"
+                accept="image/*"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="p-2 border rounded bg-white w-full"
+                />
+                {editingProduct && !file && (
+                    <p className="text-xs text-gray-500 mt-1">Current image: <a href={formData.image_url || "#"} target="_blank" className="text-blue-500 hover:underline truncate inline-block max-w-[200px] align-bottom">{formData.image_url ? "View Link" : "None"}</a></p>
+                )}
+            </div>
           </div>
         </div>
       </div>
@@ -460,7 +475,7 @@ export default function AdminPage() {
     }
   };
 
-  // 2. Category Form (Internal Component for simplicity here)
+  // 2. Category Form
   const CategoryForm = () => {
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
@@ -491,7 +506,7 @@ export default function AdminPage() {
     )
   }
 
-  // 3. Testimonial Form (Internal)
+  // 3. Testimonial Form
   const TestimonialForm = () => {
       const [t, setT] = useState({customer_name: "", rating: 5, comment: ""});
       const submit = async (e: React.FormEvent) => {
@@ -537,7 +552,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-white">
       {globalMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white p-4 font-bold rounded shadow-lg flex gap-2">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white p-4 font-bold rounded shadow-lg flex gap-2 animate-bounce-in">
             <CheckCircle /> {globalMessage}
         </div>
       )}
@@ -643,3 +658,4 @@ export default function AdminPage() {
     </div>
   );
 }
+```
