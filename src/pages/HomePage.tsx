@@ -64,7 +64,10 @@ export default function HomePage() {
 
   const loadCategories = async () => {
     try {
-      const { data } = await supabase.from("categories").select("*");
+      const { data } = await supabase
+  .from("categories")
+  .select("*")
+  .order("display_order", { ascending: true, nullsFirst: false });
       if (data) setCategories(data);
     } catch (error) {
       console.log("Categories not available");
@@ -73,7 +76,10 @@ export default function HomePage() {
 
   const loadFeaturedProducts = async () => {
     try {
-      const { data } = await supabase.from("products").select("*").limit(8);
+      const { data } = await supabase
+  .from("products")
+  .select("*")
+  .order("display_order", { ascending: true, nullsFirst: false }).limit(8);
 
       if (data) {
         const withMrp = data.map((p: any) => ({
