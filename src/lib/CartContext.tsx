@@ -8,6 +8,7 @@ export type CartItem = {
   price: number;
   mrp?: number;
   quantity: number;
+  imageUrl?: string;
 };
 
 type CartContextType = {
@@ -58,6 +59,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: product.name,
         price: product.price,
         mrp: (product as any).mrp ?? product.price,
+        imageUrl: product.image_url,
         quantity,
       };
       return [...prev, next];
