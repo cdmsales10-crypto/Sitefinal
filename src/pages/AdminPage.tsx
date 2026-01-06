@@ -1054,7 +1054,6 @@ export default function AdminPage() {
   // ---- UI state ----
   const [searchQuery, setSearchQuery] = useState("");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<Tab | null>(null);
 
   // feedback state
@@ -1130,7 +1129,6 @@ export default function AdminPage() {
     if (error) setErrorMessage(error.message);
     setEditingProduct(null);
     setEditingOrder(null);
-    setDraggedItem(null);
   };
 
   // ---- Data fetching with display_order ----
@@ -1170,7 +1168,7 @@ export default function AdminPage() {
 
   // ---- Manual Order Controls (Up/Down buttons) ----
   const moveItemUp = async (
-    table: string,
+    table: "products" | "categories",
     id: string,
     currentIndex: number
   ) => {
@@ -1181,7 +1179,6 @@ export default function AdminPage() {
     const [movedItem] = newItems.splice(currentIndex, 1);
     newItems.splice(currentIndex - 1, 0, movedItem);
 
-    // Update display_order
     const updatedItems = newItems.map((item, index) => ({
       ...item,
       display_order: index + 1,
@@ -1193,27 +1190,21 @@ export default function AdminPage() {
         updatedItems.map(({ id, display_order }) => ({ id, display_order })),
         { onConflict: "id" }
       );
-
       if (error) throw error;
 
-      if (table === "products") {
-        setProducts(newItems as Product[]);
-      } else {
-        setCategories(newItems as Category[]);
-      }
+      if (table === "products") setProducts(newItems as Product[]);
+      else setCategories(newItems as Category[]);
 
       setSuccessMessage("Order updated successfully!");
     } catch (error: any) {
-      setErrorMessage(
-        "Failed to update order: " + (error?.message || "Unknown")
-      );
+      setErrorMessage("Failed to update order: " + (error?.message || "Unknown"));
     } finally {
       setUploading(false);
     }
   };
 
   const moveItemDown = async (
-    table: string,
+    table: "products" | "categories",
     id: string,
     currentIndex: number
   ) => {
@@ -1224,7 +1215,6 @@ export default function AdminPage() {
     const [movedItem] = newItems.splice(currentIndex, 1);
     newItems.splice(currentIndex + 1, 0, movedItem);
 
-    // Update display_order
     const updatedItems = newItems.map((item, index) => ({
       ...item,
       display_order: index + 1,
@@ -1236,20 +1226,14 @@ export default function AdminPage() {
         updatedItems.map(({ id, display_order }) => ({ id, display_order })),
         { onConflict: "id" }
       );
-
       if (error) throw error;
 
-      if (table === "products") {
-        setProducts(newItems as Product[]);
-      } else {
-        setCategories(newItems as Category[]);
-      }
+      if (table === "products") setProducts(newItems as Product[]);
+      else setCategories(newItems as Category[]);
 
       setSuccessMessage("Order updated successfully!");
     } catch (error: any) {
-      setErrorMessage(
-        "Failed to update order: " + (error?.message || "Unknown")
-      );
+      setErrorMessage("Failed to update order: " + (error?.message || "Unknown"));
     } finally {
       setUploading(false);
     }
@@ -1272,17 +1256,13 @@ export default function AdminPage() {
 
     try {
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${
-          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-        }/image/upload`,
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
         { method: "POST", body: formData }
       );
-
       if (!res.ok) throw new Error("Cloudinary upload failed");
 
       const data = await res.json();
-      if (!data?.secure_url)
-        throw new Error("Cloudinary did not return secure_url");
+      if (!data?.secure_url) throw new Error("Cloudinary did not return secure_url");
       return data.secure_url as string;
     } finally {
       setUploading(false);
@@ -1325,7 +1305,7 @@ export default function AdminPage() {
 
   // ----------------- ProductForm Component -----------------
   const ProductForm = () => {
-    const emptyForm: Partial<Product> = {
+    const emptyForm: Partial<Product & { display_order?: number }> = {
       category_slug: categories[0]?.slug || "",
       featured: false,
       stock: true,
@@ -1334,9 +1314,10 @@ export default function AdminPage() {
       mrp: 0,
       description: "",
       image_url: "",
+      display_order: undefined,
     };
 
-    const [formData, setFormData] = useState<Partial<Product>>(emptyForm);
+    const [formData, setFormData] = useState<Partial<Product & { display_order?: number }>>(emptyForm);
     const [file, setFile] = useState<File | null>(null);
 
     useEffect(() => {
@@ -1358,7 +1339,7 @@ export default function AdminPage() {
         ) as HTMLInputElement | null;
         if (fileInput) fileInput.value = "";
       }
-    }, [editingProduct, categories]);
+    }, [editingProduct, categories]);  
 
     useEffect(() => {
       if (editingProduct) return;
@@ -1413,6 +1394,14 @@ export default function AdminPage() {
           imageUrl = editingProduct.image_url;
         }
 
+        // Derive display_order: use provided value, else append to end
+        const manualOrder = formData.display_order
+          ? Number(formData.display_order)
+          : undefined;
+        const maxOrder = products.length > 0
+          ? Math.max(...products.map((p) => (p as any).display_order || 0))
+          : 0;
+
         const payload: any = {
           name: normalizedName,
           category_slug: formData.category_slug,
@@ -1427,16 +1416,21 @@ export default function AdminPage() {
           stock: formData.stock !== false,
         };
 
+        if (manualOrder && manualOrder > 0) {
+          payload.display_order = manualOrder;
+        } else if (!editingProduct) {
+          // new product with no explicit order: add to end
+          payload.display_order = maxOrder + 1;
+        }
+
         let updatedProducts = products;
         if (editingProduct?.id) {
-          // UPDATE
           const { data: updatedProduct, error } = await supabase
             .from("products")
             .update(payload)
             .eq("id", editingProduct.id)
             .select()
             .single();
-
           if (error) throw error;
 
           if (updatedProduct) {
@@ -1445,15 +1439,11 @@ export default function AdminPage() {
             );
           }
         } else {
-          // INSERT - new product gets display_order at end
-          payload.display_order = products.length + 1;
-
           const { data: newProduct, error } = await supabase
             .from("products")
             .insert([payload])
             .select()
             .single();
-
           if (error) throw error;
 
           if (newProduct) {
@@ -1528,8 +1518,8 @@ export default function AdminPage() {
           )}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-1 md:col-span-2">
             <label className="text-sm font-bold text-gray-700">Name*</label>
             <input
               required
@@ -1539,6 +1529,32 @@ export default function AdminPage() {
                 setFormData({ ...formData, name: e.target.value })
               }
               value={formData.name || ""}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-bold text-gray-700">
+              Display Order
+            </label>
+            <input
+              type="number"
+              min={1}
+              placeholder="Ex: 1"
+              className="p-2 border rounded"
+              value={
+                formData.display_order !== undefined &&
+                formData.display_order !== null
+                  ? formData.display_order
+                  : ""
+              }
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  display_order: e.target.value
+                    ? Number(e.target.value)
+                    : undefined,
+                })
+              }
             />
           </div>
 
@@ -1603,7 +1619,7 @@ export default function AdminPage() {
             />
           </div>
 
-          <div className="md:col-span-2 flex flex-wrap gap-4">
+          <div className="md:col-span-3 flex flex-wrap gap-4">
             <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
               <input
                 id="featured-checkbox"
@@ -1642,7 +1658,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1 md:col-span-2">
+          <div className="flex flex-col gap-1 md:col-span-3">
             <label className="text-sm font-bold text-gray-700">
               Image {editingProduct && "(Leave empty to keep current image)"}
             </label>
@@ -1704,6 +1720,7 @@ export default function AdminPage() {
   const CategoryForm = () => {
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
+    const [displayOrder, setDisplayOrder] = useState<number | "">("");
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -1730,12 +1747,23 @@ export default function AdminPage() {
           return;
         }
 
-        // New category gets display_order at end
-        const payload = {
+        const maxOrder =
+          categories.length > 0
+            ? Math.max(
+                ...categories.map((c) => (c as any).display_order || 0)
+              )
+            : 0;
+
+        const payload: any = {
           name: name.trim(),
           slug: slug.trim(),
-          display_order: categories.length + 1,
         };
+
+        if (displayOrder && Number(displayOrder) > 0) {
+          payload.display_order = Number(displayOrder);
+        } else {
+          payload.display_order = maxOrder + 1;
+        }
 
         const { data: newCategory, error } = await supabase
           .from("categories")
@@ -1752,6 +1780,7 @@ export default function AdminPage() {
         setSuccessMessage("Category added successfully");
         setName("");
         setSlug("");
+        setDisplayOrder("");
       } catch (error: any) {
         setErrorMessage(
           "Failed to add category: " + (error?.message || "Unknown")
@@ -1789,6 +1818,24 @@ export default function AdminPage() {
             value={slug}
             onChange={(e) =>
               setSlug(e.target.value.toLowerCase().replace(/\s+/g, "_"))
+            }
+            className="p-2 border rounded w-full"
+          />
+        </div>
+
+        <div className="flex-1 w-full">
+          <label className="text-sm font-bold text-gray-700 block mb-1">
+            Display Order
+          </label>
+          <input
+            type="number"
+            min={1}
+            placeholder="Ex: 1"
+            value={displayOrder}
+            onChange={(e) =>
+              setDisplayOrder(
+                e.target.value ? Number(e.target.value) : ""
+              )
             }
             className="p-2 border rounded w-full"
           />
@@ -1965,7 +2012,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Toast Messages */}
       {(errorMessage || successMessage) && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] min-w-[300px] text-center shadow-lg rounded-lg overflow-hidden animate-bounce-in">
           {errorMessage && (
@@ -1981,7 +2027,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Header */}
       <div className="bg-black text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
         <h1 className="text-2xl font-anton tracking-wide">
           CDM <span className="text-red-600">ADMIN</span>
@@ -1996,7 +2041,6 @@ export default function AdminPage() {
       </div>
 
       <div className="container mx-auto p-4 md:p-8 max-w-5xl">
-        {/* Tabs */}
         <div className="flex gap-2 md:gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
           {(["products", "categories", "testimonials"] as Tab[]).map((tab) => (
             <button
@@ -2013,12 +2057,10 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* Products Tab */}
         {activeTab === "products" && (
           <div className="animate-fade-in">
             <ProductForm />
 
-            {/* Order Controls */}
             {editingOrder === "products" && (
               <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <button
@@ -2029,8 +2071,7 @@ export default function AdminPage() {
                   <X size={16} /> Done Editing Order
                 </button>
                 <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
-                  Drag items using ↑↓ buttons. Items will appear in this exact
-                  order on frontend.
+                  Use ↑↓ buttons or Display Order field to control product order.
                 </div>
               </div>
             )}
@@ -2136,7 +2177,7 @@ export default function AdminPage() {
                         </p>
                         {editingOrder === "products" && (
                           <p className="text-xs text-blue-600 font-mono mt-1">
-                            Position: #{p.display_order || globalIndex + 1}
+                            Position: {(p as any).display_order || globalIndex + 1}
                           </p>
                         )}
                       </div>
@@ -2214,10 +2255,8 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Categories Tab */}
         {activeTab === "categories" && (
           <div className="animate-fade-in">
-            {/* Order Controls */}
             {editingOrder === "categories" && (
               <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <button
@@ -2228,8 +2267,7 @@ export default function AdminPage() {
                   <X size={16} /> Done Editing Order
                 </button>
                 <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
-                  Use ↑↓ buttons to reorder. Items will appear in this exact
-                  order on frontend.
+                  Use ↑↓ buttons or Display Order field to control category order.
                 </div>
               </div>
             )}
@@ -2260,7 +2298,7 @@ export default function AdminPage() {
                     </span>
                     {editingOrder === "categories" && (
                       <p className="text-xs text-blue-600 font-mono mt-1">
-                        Position: #{(c as any).display_order || index + 1}
+                        Position: {(c as any).display_order || index + 1}
                       </p>
                     )}
                   </div>
@@ -2309,7 +2347,6 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Testimonials Tab */}
         {activeTab === "testimonials" && (
           <div className="animate-fade-in">
             <TestimonialForm />
@@ -2350,4 +2387,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
 
