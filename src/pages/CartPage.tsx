@@ -1,5 +1,6 @@
 // import { useCart } from "../lib/CartContext";
 // import { Trash2 } from "lucide-react";
+// import { useState } from "react";
 
 // export default function CartPage() {
 //   const {
@@ -11,34 +12,63 @@
 //     clearCart,
 //   } = useCart();
 
+//   const [showForm, setShowForm] = useState(false);
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     phone: "",
+//     address: "",
+//     pincode: "",
+//   });
+
+//   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+//     setFormData({
+//       ...formData,
+//       [e.target.name]: e.target.value,
+//     });
+//   };
+
 //   const handleCheckoutWhatsApp = () => {
 //     if (items.length === 0) return;
 
+//     if (!showForm || !formData.name || !formData.phone || !formData.address || !formData.pincode) {
+//       setShowForm(true);
+//       return;
+//     }
+
 //     const lines: string[] = [];
 
-//     lines.push("New order from website:");
-//     lines.push(""); // blank line
+//     lines.push("🛒 *NEW WEBSITE ORDER*");
+//     lines.push("════════════════════");
+//     lines.push("");
 
+//     lines.push(`👤 *Customer Details:*`);
+//     lines.push(`Name: ${formData.name}`);
+//     lines.push(`Phone: ${formData.phone}`);
+//     lines.push(`Address: ${formData.address}`);
+//     lines.push(`Pincode: ${formData.pincode}`);
+//     lines.push("");
+
+//     lines.push(`📦 *Order Items (${totalItems}):*`);
 //     items.forEach((item, index) => {
 //       const subtotal = item.quantity * item.price;
 //       lines.push(
-//         `${index + 1}. ${item.name} - Qty: ${
-//           item.quantity
-//         } x ₹${item.price.toFixed(2)} = ₹${subtotal.toFixed(2)}`
+//         `${index + 1}. *${item.name}* - Qty: ${item.quantity} x ₹${item.price.toFixed(2)} = ₹${subtotal.toFixed(2)}`
 //       );
 //     });
 
 //     lines.push("");
-//     lines.push(`Total items: ${totalItems}`);
-//     lines.push(`Total price: ₹${totalPrice.toFixed(2)}`);
+//     lines.push(`💰 *Total: ₹${totalPrice.toFixed(2)}*`);
+//     lines.push("════════════════════");
+//     lines.push("Please confirm order & delivery details!");
 
-//     const message = lines.join("\n"); // WhatsApp supports \n for new lines [web:2][web:9]
-//     const encoded = encodeURIComponent(message); // safe for query param [web:14][web:10]
+//     const message = lines.join("\n");
+//     const encoded = encodeURIComponent(message);
 
-//     const phone = "919000805105"; // without + or leading 0 [web:1]
+//     const phone = "919000805105";
 //     const url = `https://wa.me/${phone}?text=${encoded}`;
 
 //     window.open(url, "_blank");
+//     setShowForm(false); // Optional: hide form after sending
 //   };
 
 //   return (
@@ -135,18 +165,74 @@
 //               <span>Items ({totalItems})</span>
 //               <span className="font-semibold">₹{totalPrice.toFixed(2)}</span>
 //             </div>
+
+//             {showForm ? (
+//               <div className="space-y-4 mb-4">
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+//                   <input
+//                     type="text"
+//                     name="name"
+//                     value={formData.name}
+//                     onChange={handleInputChange}
+//                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+//                     placeholder="Enter your full name"
+//                     required
+//                   />
+//                 </div>
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+//                   <input
+//                     type="tel"
+//                     name="phone"
+//                     value={formData.phone}
+//                     onChange={handleInputChange}
+//                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+//                     placeholder="e.g. 9876543210"
+//                     required
+//                   />
+//                 </div>
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+//                   <textarea
+//                     name="address"
+//                     rows={3}
+//                     value={formData.address}
+//                     onChange={handleInputChange}
+//                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-vertical"
+//                     placeholder="Enter complete delivery address"
+//                     required
+//                   />
+//                 </div>
+//                 <div>
+//                   <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
+//                   <input
+//                     type="text"
+//                     name="pincode"
+//                     value={formData.pincode}
+//                     onChange={handleInputChange}
+//                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+//                     placeholder="e.g. 530001"
+//                     maxLength={6}
+//                     required
+//                   />
+//                 </div>
+//               </div>
+//             ) : null}
+
 //             <div className="mt-4">
 //               <button
 //                 onClick={handleCheckoutWhatsApp}
-//                 className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded font-semibold"
+//                 className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded font-semibold transition-colors"
+//                 disabled={showForm && (!formData.name || !formData.phone || !formData.address || !formData.pincode)}
 //               >
-//                 Checkout via WhatsApp
+//                 {showForm ? "Send Order to WhatsApp" : "Checkout via WhatsApp"}
 //               </button>
 //             </div>
 //             <div className="mt-3">
 //               <button
 //                 onClick={clearCart}
-//                 className="w-full bg-gray-100 hover:bg-gray-200 text-black py-3 rounded font-semibold"
+//                 className="w-full bg-gray-100 hover:bg-gray-200 text-black py-3 rounded font-semibold transition-colors"
 //               >
 //                 Clear Cart
 //               </button>
@@ -158,7 +244,7 @@
 //   );
 // }
 import { useCart } from "../lib/CartContext";
-import { Trash2 } from "lucide-react";
+import { Trash2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
 export default function CartPage() {
@@ -178,19 +264,81 @@ export default function CartPage() {
     address: "",
     pincode: "",
   });
+  const [errors, setErrors] = useState({
+    name: "",
+    phone: "",
+    address: "",
+    pincode: "",
+  });
+  const [submitError, setSubmitError] = useState("");
+
+  const validateForm = () => {
+    const newErrors = {
+      name: "",
+      phone: "",
+      address: "",
+      pincode: "",
+    };
+    let isValid = true;
+
+    if (!formData.name.trim()) {
+      newErrors.name = "Name is required";
+      isValid = false;
+    }
+
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!formData.phone || !phoneRegex.test(formData.phone)) {
+      newErrors.phone = "Enter valid 10-digit phone number (starts with 6-9)";
+      isValid = false;
+    }
+
+    if (!formData.address.trim()) {
+      newErrors.address = "Address is required";
+      isValid = false;
+    }
+
+    const pincodeRegex = /^\d{6}$/;
+    if (!formData.pincode || !pincodeRegex.test(formData.pincode)) {
+      newErrors.pincode = "Enter valid 6-digit pincode";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    setSubmitError("");
+    return isValid;
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // Clear error on input
+    if (errors[name as keyof typeof errors]) {
+      setErrors({
+        ...errors,
+        [name]: "",
+      });
+    }
   };
 
   const handleCheckoutWhatsApp = () => {
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      setSubmitError("Cart is empty. Add items to place order.");
+      return;
+    }
 
-    if (!showForm || !formData.name || !formData.phone || !formData.address || !formData.pincode) {
+    if (!showForm) {
       setShowForm(true);
+      setErrors({});
+      setSubmitError("");
+      return;
+    }
+
+    if (!validateForm()) {
+      setSubmitError("Please fix the errors above and try again.");
       return;
     }
 
@@ -227,7 +375,8 @@ export default function CartPage() {
     const url = `https://wa.me/${phone}?text=${encoded}`;
 
     window.open(url, "_blank");
-    setShowForm(false); // Optional: hide form after sending
+    setShowForm(false);
+    setFormData({ name: "", phone: "", address: "", pincode: "" }); // Reset form
   };
 
   return (
@@ -334,11 +483,21 @@ export default function CartPage() {
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
+                      errors.name
+                        ? "border-red-300 focus:ring-red-500 ring-1 ring-red-200"
+                        : "border-gray-300 focus:ring-red-500"
+                    }`}
                     placeholder="Enter your full name"
-                    required
                   />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.name}
+                    </p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                   <input
@@ -346,11 +505,21 @@ export default function CartPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
+                      errors.phone
+                        ? "border-red-300 focus:ring-red-500 ring-1 ring-red-200"
+                        : "border-gray-300 focus:ring-red-500"
+                    }`}
                     placeholder="e.g. 9876543210"
-                    required
                   />
+                  {errors.phone && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.phone}
+                    </p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
                   <textarea
@@ -358,11 +527,21 @@ export default function CartPage() {
                     rows={3}
                     value={formData.address}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 resize-vertical"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all resize-vertical ${
+                      errors.address
+                        ? "border-red-300 focus:ring-red-500 ring-1 ring-red-200"
+                        : "border-gray-300 focus:ring-red-500"
+                    }`}
                     placeholder="Enter complete delivery address"
-                    required
                   />
+                  {errors.address && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.address}
+                    </p>
+                  )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Pincode</label>
                   <input
@@ -370,20 +549,38 @@ export default function CartPage() {
                     name="pincode"
                     value={formData.pincode}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 transition-all ${
+                      errors.pincode
+                        ? "border-red-300 focus:ring-red-500 ring-1 ring-red-200"
+                        : "border-gray-300 focus:ring-red-500"
+                    }`}
                     placeholder="e.g. 530001"
                     maxLength={6}
-                    required
                   />
+                  {errors.pincode && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.pincode}
+                    </p>
+                  )}
                 </div>
               </div>
             ) : null}
 
+            {submitError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <div className="flex items-start gap-2 text-red-800 text-sm">
+                  <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                  {submitError}
+                </div>
+              </div>
+            )}
+
             <div className="mt-4">
               <button
                 onClick={handleCheckoutWhatsApp}
-                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded font-semibold transition-colors"
-                disabled={showForm && (!formData.name || !formData.phone || !formData.address || !formData.pincode)}
+                className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled={showForm && Object.values(errors).some((e) => e !== "")}
               >
                 {showForm ? "Send Order to WhatsApp" : "Checkout via WhatsApp"}
               </button>
