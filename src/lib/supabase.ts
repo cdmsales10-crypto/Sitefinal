@@ -10,6 +10,7 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  display_order?: number;
 }
 
 export interface Product {
@@ -23,6 +24,7 @@ export interface Product {
   image_url?: string;
   category_slug: string;
   created_at?: string;
+  display_order?: number;
 }
 
 export interface Testimonial {
