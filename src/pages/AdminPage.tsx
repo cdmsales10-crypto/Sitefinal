@@ -33,6 +33,7 @@
 //   // ---- UI state ----
 //   const [searchQuery, setSearchQuery] = useState("");
 //   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+//   const [editingOrder, setEditingOrder] = useState<Tab | null>(null);
 
 //   // feedback state
 //   const [uploading, setUploading] = useState(false);
@@ -63,7 +64,7 @@
 //       data: { subscription },
 //     } = supabase.auth.onAuthStateChange((_event, newSession) => {
 //       setSession(newSession ?? null);
-//     }); // listen to auth events [web:21]
+//     });
 
 //     return () => {
 //       mounted = false;
@@ -75,7 +76,6 @@
 //   useEffect(() => {
 //     if (!session) return;
 //     fetchData();
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
 //   }, [session?.user?.id]);
 
 //   const handleLogin = async (e: React.FormEvent) => {
@@ -88,7 +88,7 @@
 //       const { error } = await supabase.auth.signInWithPassword({
 //         email: emailInput.trim(),
 //         password: passwordInput,
-//       }); // password sign-in [web:25]
+//       });
 
 //       if (error) throw error;
 
@@ -104,26 +104,31 @@
 //   const handleLogout = async () => {
 //     setErrorMessage(null);
 //     setSuccessMessage(null);
-//     const { error } = await supabase.auth.signOut(); // removes session + triggers SIGNED_OUT [web:29]
+//     const { error } = await supabase.auth.signOut();
 //     if (error) setErrorMessage(error.message);
 //     setEditingProduct(null);
+//     setEditingOrder(null);
 //   };
 
-//   // ---- Data fetching ----
+//   // ---- Data fetching with display_order ----
 //   const fetchData = async () => {
 //     try {
 //       setErrorMessage(null);
 
+//       // Products ordered by display_order first
 //       const { data: p, error: pError } = await supabase
 //         .from("products")
 //         .select("*")
+//         .order("display_order", { ascending: true, nullsFirst: false })
 //         .order("created_at", { ascending: false });
 //       if (pError) throw pError;
 //       setProducts(p || []);
 
+//       // Categories ordered by display_order first
 //       const { data: c, error: cError } = await supabase
 //         .from("categories")
 //         .select("*")
+//         .order("display_order", { ascending: true, nullsFirst: false })
 //         .order("name", { ascending: true });
 //       if (cError) throw cError;
 //       setCategories(c || []);
@@ -140,20 +145,99 @@
 //     }
 //   };
 
+//   // ---- Manual Order Controls (Up/Down buttons) ----
+//   const moveItemUp = async (
+//     table: "products" | "categories",
+//     id: string,
+//     currentIndex: number
+//   ) => {
+//     if (currentIndex === 0) return;
+
+//     const items = table === "products" ? products : categories;
+//     const newItems = [...items];
+//     const [movedItem] = newItems.splice(currentIndex, 1);
+//     newItems.splice(currentIndex - 1, 0, movedItem);
+
+//     const updatedItems = newItems.map((item, index) => ({
+//       ...item,
+//       display_order: index + 1,
+//     }));
+
+//     try {
+//       setUploading(true);
+//       const { error } = await supabase.from(table).upsert(
+//         updatedItems.map(({ id, display_order }) => ({ id, display_order })),
+//         { onConflict: "id" }
+//       );
+//       if (error) throw error;
+
+//       if (table === "products") setProducts(newItems as Product[]);
+//       else setCategories(newItems as Category[]);
+
+//       setSuccessMessage("Order updated successfully!");
+//     } catch (error: any) {
+//       setErrorMessage("Failed to update order: " + (error?.message || "Unknown"));
+//     } finally {
+//       setUploading(false);
+//     }
+//   };
+
+//   const moveItemDown = async (
+//     table: "products" | "categories",
+//     id: string,
+//     currentIndex: number
+//   ) => {
+//     const items = table === "products" ? products : categories;
+//     if (currentIndex === items.length - 1) return;
+
+//     const newItems = [...items];
+//     const [movedItem] = newItems.splice(currentIndex, 1);
+//     newItems.splice(currentIndex + 1, 0, movedItem);
+
+//     const updatedItems = newItems.map((item, index) => ({
+//       ...item,
+//       display_order: index + 1,
+//     }));
+
+//     try {
+//       setUploading(true);
+//       const { error } = await supabase.from(table).upsert(
+//         updatedItems.map(({ id, display_order }) => ({ id, display_order })),
+//         { onConflict: "id" }
+//       );
+//       if (error) throw error;
+
+//       if (table === "products") setProducts(newItems as Product[]);
+//       else setCategories(newItems as Category[]);
+
+//       setSuccessMessage("Order updated successfully!");
+//     } catch (error: any) {
+//       setErrorMessage("Failed to update order: " + (error?.message || "Unknown"));
+//     } finally {
+//       setUploading(false);
+//     }
+//   };
+
+//   const toggleOrderEditing = (tab: Tab | null) => {
+//     setEditingOrder(editingOrder ? null : tab);
+//   };
+
 //   // ---- Image upload ----
 //   const uploadImage = async (file: File): Promise<string> => {
 //     setUploading(true);
 
 //     const formData = new FormData();
 //     formData.append("file", file);
-//     formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+//     formData.append(
+//       "upload_preset",
+//       import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+//     );
 
 //     try {
 //       const res = await fetch(
 //         `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
 //         { method: "POST", body: formData }
 //       );
-
 //       if (!res.ok) throw new Error("Cloudinary upload failed");
 
 //       const data = await res.json();
@@ -176,7 +260,6 @@
 //       if (error) throw error;
 
 //       setSuccessMessage("Item deleted successfully");
-
 //       if (editingProduct?.id === id) setEditingProduct(null);
 
 //       await fetchData();
@@ -199,10 +282,9 @@
 //     return products.filter((p) => (p.name || "").toLowerCase().includes(q));
 //   }, [products, searchQuery]);
 
-//   // ----------------- Sub Components -----------------
-
+//   // ----------------- ProductForm Component -----------------
 //   const ProductForm = () => {
-//     const emptyForm: Partial<Product> = {
+//     const emptyForm: Partial<Product & { display_order?: number }> = {
 //       category_slug: categories[0]?.slug || "",
 //       featured: false,
 //       stock: true,
@@ -211,17 +293,19 @@
 //       mrp: 0,
 //       description: "",
 //       image_url: "",
+//       display_order: undefined,
 //     };
 
-//     const [formData, setFormData] = useState<Partial<Product>>(emptyForm);
+//     const [formData, setFormData] = useState<Partial<Product & { display_order?: number }>>(emptyForm);
 //     const [file, setFile] = useState<File | null>(null);
 
-//     // Reset form when editing changes
 //     useEffect(() => {
 //       if (editingProduct) {
 //         setFormData({ ...editingProduct });
 //         setFile(null);
-//         const fileInput = document.getElementById("product-file-input") as HTMLInputElement | null;
+//         const fileInput = document.getElementById(
+//           "product-file-input"
+//         ) as HTMLInputElement | null;
 //         if (fileInput) fileInput.value = "";
 //       } else {
 //         setFormData({
@@ -229,27 +313,25 @@
 //           category_slug: categories[0]?.slug || "",
 //         });
 //         setFile(null);
-//         const fileInput = document.getElementById("product-file-input") as HTMLInputElement | null;
+//         const fileInput = document.getElementById(
+//           "product-file-input"
+//         ) as HTMLInputElement | null;
 //         if (fileInput) fileInput.value = "";
 //       }
-//       // eslint-disable-next-line react-hooks/exhaustive-deps
-//     }, [editingProduct]);
+//     }, [editingProduct, categories]);  
 
-//     // If categories load after first render, ensure category_slug is not empty (for new product)
 //     useEffect(() => {
 //       if (editingProduct) return;
 //       if (!formData.category_slug && categories.length > 0) {
 //         setFormData((prev) => ({ ...prev, category_slug: categories[0].slug }));
 //       }
-//       // eslint-disable-next-line react-hooks/exhaustive-deps
-//     }, [categories.length]);
+//     }, [categories.length, formData.category_slug, editingProduct]);
 
 //     const handleSubmit = async (e: React.FormEvent) => {
 //       e.preventDefault();
 //       setErrorMessage(null);
 //       setSuccessMessage(null);
 
-//       // Validation
 //       if (!formData.name?.trim() || !formData.category_slug) {
 //         setErrorMessage("Please fill in all required fields.");
 //         return;
@@ -264,7 +346,6 @@
 
 //         const normalizedName = formData.name.trim();
 
-//         // Duplicate Name Check (exclude current product when editing)
 //         let dupQuery = supabase
 //           .from("products")
 //           .select("id")
@@ -274,64 +355,87 @@
 //           dupQuery = dupQuery.neq("id", editingProduct.id);
 //         }
 
-//         const { data: existing, error: dupError } = await dupQuery.maybeSingle();
+//         const { data: existing, error: dupError } =
+//           await dupQuery.maybeSingle();
 //         if (dupError) throw dupError;
 //         if (existing) {
-//           setErrorMessage(`A product with the name "${normalizedName}" already exists.`);
+//           setErrorMessage(
+//             `A product with the name "${normalizedName}" already exists.`
+//           );
 //           return;
 //         }
 
-//         // Image logic
 //         let imageUrl = (formData.image_url || "").trim();
 
 //         if (file) {
 //           imageUrl = await uploadImage(file);
 //         } else if (editingProduct?.image_url) {
-//           // keep old image if no new file chosen
 //           imageUrl = editingProduct.image_url;
 //         }
 
-//         const payload = {
+//         // Derive display_order: use provided value, else append to end
+//         const manualOrder = formData.display_order
+//           ? Number(formData.display_order)
+//           : undefined;
+//         const maxOrder = products.length > 0
+//           ? Math.max(...products.map((p) => (p as any).display_order || 0))
+//           : 0;
+
+//         const payload: any = {
 //           name: normalizedName,
 //           category_slug: formData.category_slug,
 //           price: Number(formData.price),
-//           mrp: formData.mrp && Number(formData.mrp) > 0 ? Number(formData.mrp) : null,
+//           mrp:
+//             formData.mrp && Number(formData.mrp) > 0
+//               ? Number(formData.mrp)
+//               : null,
 //           description: (formData.description || "").trim(),
 //           image_url: imageUrl || null,
 //           featured: !!formData.featured,
-//           stock: formData.stock !== false, // true unless explicitly false
+//           stock: formData.stock !== false,
 //         };
 
+//         if (manualOrder && manualOrder > 0) {
+//           payload.display_order = manualOrder;
+//         } else if (!editingProduct) {
+//           // new product with no explicit order: add to end
+//           payload.display_order = maxOrder + 1;
+//         }
+
+//         let updatedProducts = products;
 //         if (editingProduct?.id) {
-//           // UPDATE
 //           const { data: updatedProduct, error } = await supabase
 //             .from("products")
 //             .update(payload)
 //             .eq("id", editingProduct.id)
-//             .select("*") // ensure returning row when allowed [page:0]
-//             .maybeSingle(); // ok for 0/1 row [web:3]
-
+//             .select()
+//             .single();
 //           if (error) throw error;
 
-//           // If RLS prevents returning row, updatedProduct can be null; still refetch for consistency.
-//           setSuccessMessage("Product updated successfully!");
+//           if (updatedProduct) {
+//             updatedProducts = products.map((p) =>
+//               p.id === updatedProduct.id ? updatedProduct : p
+//             );
+//           }
 //         } else {
-//           // INSERT
 //           const { data: newProduct, error } = await supabase
 //             .from("products")
 //             .insert([payload])
-//             .select("*")
+//             .select()
 //             .single();
-
 //           if (error) throw error;
 
-//           // Optimistic prepend
-//           if (newProduct) setProducts((prev) => [newProduct, ...prev]);
-
-//           setSuccessMessage("Product added successfully!");
+//           if (newProduct) {
+//             updatedProducts = [...products, newProduct];
+//           }
 //         }
 
-//         // Cleanup
+//         setProducts(updatedProducts);
+//         setSuccessMessage(
+//           editingProduct
+//             ? "Product updated successfully!"
+//             : "Product added successfully!"
+//         );
 //         setEditingProduct(null);
 //         setFile(null);
 //         setFormData({
@@ -339,11 +443,10 @@
 //           category_slug: categories[0]?.slug || "",
 //         });
 
-//         const fileInput = document.getElementById("product-file-input") as HTMLInputElement | null;
+//         const fileInput = document.getElementById(
+//           "product-file-input"
+//         ) as HTMLInputElement | null;
 //         if (fileInput) fileInput.value = "";
-
-//         // Always refetch to avoid stale UI (especially if update returned null)
-//         await fetchData();
 //       } catch (error: any) {
 //         console.error("Error in product submit:", error);
 //         setErrorMessage(error?.message || "Operation failed");
@@ -358,7 +461,9 @@
 //       <form
 //         onSubmit={handleSubmit}
 //         className={`p-6 rounded-lg mb-8 grid gap-4 border shadow-sm transition-colors ${
-//           editingProduct ? "bg-yellow-50 border-yellow-200" : "bg-gray-100 border-gray-200"
+//           editingProduct
+//             ? "bg-yellow-50 border-yellow-200"
+//             : "bg-gray-100 border-gray-200"
 //         }`}
 //       >
 //         <div className="flex justify-between items-center mb-2">
@@ -380,7 +485,9 @@
 //               onClick={() => {
 //                 setEditingProduct(null);
 //                 setFile(null);
-//                 const fileInput = document.getElementById("product-file-input") as HTMLInputElement | null;
+//                 const fileInput = document.getElementById(
+//                   "product-file-input"
+//                 ) as HTMLInputElement | null;
 //                 if (fileInput) fileInput.value = "";
 //               }}
 //               className="text-sm text-gray-500 hover:text-red-600 flex items-center gap-1 font-bold bg-white px-3 py-1 rounded border border-gray-300 hover:border-red-300 transition-colors"
@@ -390,15 +497,43 @@
 //           )}
 //         </div>
 
-//         <div className="grid md:grid-cols-2 gap-4">
-//           <div className="flex flex-col gap-1">
+//         <div className="grid md:grid-cols-3 gap-4">
+//           <div className="flex flex-col gap-1 md:col-span-2">
 //             <label className="text-sm font-bold text-gray-700">Name*</label>
 //             <input
 //               required
 //               placeholder="Ex: Carnauba Wax"
 //               className="p-2 border rounded"
-//               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+//               onChange={(e) =>
+//                 setFormData({ ...formData, name: e.target.value })
+//               }
 //               value={formData.name || ""}
+//             />
+//           </div>
+
+//           <div className="flex flex-col gap-1">
+//             <label className="text-sm font-bold text-gray-700">
+//               Display Order
+//             </label>
+//             <input
+//               type="number"
+//               min={1}
+//               placeholder="Ex: 1"
+//               className="p-2 border rounded"
+//               value={
+//                 formData.display_order !== undefined &&
+//                 formData.display_order !== null
+//                   ? formData.display_order
+//                   : ""
+//               }
+//               onChange={(e) =>
+//                 setFormData({
+//                   ...formData,
+//                   display_order: e.target.value
+//                     ? Number(e.target.value)
+//                     : undefined,
+//                 })
+//               }
 //             />
 //           </div>
 
@@ -407,7 +542,9 @@
 //             <select
 //               className="p-2 border rounded"
 //               value={formData.category_slug || ""}
-//               onChange={(e) => setFormData({ ...formData, category_slug: e.target.value })}
+//               onChange={(e) =>
+//                 setFormData({ ...formData, category_slug: e.target.value })
+//               }
 //             >
 //               {categories.length === 0 ? (
 //                 <option value="" disabled>
@@ -424,7 +561,9 @@
 //           </div>
 
 //           <div className="flex flex-col gap-1">
-//             <label className="text-sm font-bold text-gray-700">Price (₹)*</label>
+//             <label className="text-sm font-bold text-gray-700">
+//               Price (₹)*
+//             </label>
 //             <input
 //               required
 //               type="number"
@@ -432,13 +571,17 @@
 //               step="0.01"
 //               placeholder="Ex: 499"
 //               className="p-2 border rounded"
-//               onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+//               onChange={(e) =>
+//                 setFormData({ ...formData, price: Number(e.target.value) })
+//               }
 //               value={formData.price ?? ""}
 //             />
 //           </div>
 
 //           <div className="flex flex-col gap-1">
-//             <label className="text-sm font-bold text-gray-700">MRP (Optional)</label>
+//             <label className="text-sm font-bold text-gray-700">
+//               MRP (Optional)
+//             </label>
 //             <input
 //               type="number"
 //               min="0"
@@ -455,31 +598,35 @@
 //             />
 //           </div>
 
-//           <div className="md:col-span-2 flex flex-wrap gap-4">
+//           <div className="md:col-span-3 flex flex-wrap gap-4">
 //             <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
 //               <input
 //                 id="featured-checkbox"
 //                 type="checkbox"
 //                 className="w-5 h-5 accent-red-600 cursor-pointer"
 //                 checked={!!formData.featured}
-//                 onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+//                 onChange={(e) =>
+//                   setFormData({ ...formData, featured: e.target.checked })
+//                 }
 //               />
 //               <label
 //                 htmlFor="featured-checkbox"
 //                 className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2"
 //               >
-//                 <Star size={16} className="text-yellow-500 fill-yellow-500" /> Best Seller
+//                 <Star size={16} className="text-yellow-500 fill-yellow-500" />{" "}
+//                 Best Seller
 //               </label>
 //             </div>
 
-//             {/* FIXED: checkbox now directly represents "out of stock" */}
 //             <div className="flex items-center gap-2 bg-white p-3 rounded border flex-1 min-w-[200px]">
 //               <input
 //                 id="stock-checkbox"
 //                 type="checkbox"
 //                 className="w-5 h-5 accent-black cursor-pointer"
 //                 checked={isOutOfStock}
-//                 onChange={(e) => setFormData({ ...formData, stock: !e.target.checked })}
+//                 onChange={(e) =>
+//                   setFormData({ ...formData, stock: !e.target.checked })
+//                 }
 //               />
 //               <label
 //                 htmlFor="stock-checkbox"
@@ -490,7 +637,7 @@
 //             </div>
 //           </div>
 
-//           <div className="flex flex-col gap-1 md:col-span-2">
+//           <div className="flex flex-col gap-1 md:col-span-3">
 //             <label className="text-sm font-bold text-gray-700">
 //               Image {editingProduct && "(Leave empty to keep current image)"}
 //             </label>
@@ -517,7 +664,9 @@
 //           placeholder="Description"
 //           className="p-2 border rounded w-full"
 //           rows={3}
-//           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+//           onChange={(e) =>
+//             setFormData({ ...formData, description: e.target.value })
+//           }
 //           value={formData.description || ""}
 //         />
 
@@ -525,7 +674,9 @@
 //           disabled={uploading}
 //           type="submit"
 //           className={`${
-//             editingProduct ? "bg-yellow-500 hover:bg-yellow-600" : "bg-red-600 hover:bg-red-700"
+//             editingProduct
+//               ? "bg-yellow-500 hover:bg-yellow-600"
+//               : "bg-red-600 hover:bg-red-700"
 //           } text-white py-3 px-6 rounded flex items-center justify-center gap-2 font-bold transition-all disabled:opacity-50 text-lg shadow-md`}
 //         >
 //           {uploading ? (
@@ -544,9 +695,11 @@
 //     );
 //   };
 
+//   // ----------------- CategoryForm Component -----------------
 //   const CategoryForm = () => {
 //     const [name, setName] = useState("");
 //     const [slug, setSlug] = useState("");
+//     const [displayOrder, setDisplayOrder] = useState<number | "">("");
 
 //     const handleSubmit = async (e: React.FormEvent) => {
 //       e.preventDefault();
@@ -573,23 +726,44 @@
 //           return;
 //         }
 
+//         const maxOrder =
+//           categories.length > 0
+//             ? Math.max(
+//                 ...categories.map((c) => (c as any).display_order || 0)
+//               )
+//             : 0;
+
+//         const payload: any = {
+//           name: name.trim(),
+//           slug: slug.trim(),
+//         };
+
+//         if (displayOrder && Number(displayOrder) > 0) {
+//           payload.display_order = Number(displayOrder);
+//         } else {
+//           payload.display_order = maxOrder + 1;
+//         }
+
 //         const { data: newCategory, error } = await supabase
 //           .from("categories")
-//           .insert([{ name: name.trim(), slug: slug.trim() }])
-//           .select("*")
+//           .insert([payload])
+//           .select()
 //           .single();
 
 //         if (error) throw error;
 
-//         if (newCategory) setCategories((prev) => [...prev, newCategory]);
+//         if (newCategory) {
+//           setCategories((prev) => [...prev, newCategory]);
+//         }
 
 //         setSuccessMessage("Category added successfully");
 //         setName("");
 //         setSlug("");
-
-//         await fetchData();
+//         setDisplayOrder("");
 //       } catch (error: any) {
-//         setErrorMessage("Failed to add category: " + (error?.message || "Unknown"));
+//         setErrorMessage(
+//           "Failed to add category: " + (error?.message || "Unknown")
+//         );
 //       } finally {
 //         setUploading(false);
 //       }
@@ -601,7 +775,9 @@
 //         className="bg-gray-100 p-6 rounded-lg mb-8 flex flex-col md:flex-row gap-4 items-end border border-gray-200 shadow-sm"
 //       >
 //         <div className="flex-1 w-full">
-//           <label className="text-sm font-bold text-gray-700 block mb-1">Display Name</label>
+//           <label className="text-sm font-bold text-gray-700 block mb-1">
+//             Display Name
+//           </label>
 //           <input
 //             required
 //             placeholder="Ex: Car Shampoos"
@@ -612,12 +788,34 @@
 //         </div>
 
 //         <div className="flex-1 w-full">
-//           <label className="text-sm font-bold text-gray-700 block mb-1">Unique ID (Slug)</label>
+//           <label className="text-sm font-bold text-gray-700 block mb-1">
+//             Unique ID (Slug)
+//           </label>
 //           <input
 //             required
 //             placeholder="Ex: car_shampoos"
 //             value={slug}
-//             onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "_"))}
+//             onChange={(e) =>
+//               setSlug(e.target.value.toLowerCase().replace(/\s+/g, "_"))
+//             }
+//             className="p-2 border rounded w-full"
+//           />
+//         </div>
+
+//         <div className="flex-1 w-full">
+//           <label className="text-sm font-bold text-gray-700 block mb-1">
+//             Display Order
+//           </label>
+//           <input
+//             type="number"
+//             min={1}
+//             placeholder="Ex: 1"
+//             value={displayOrder}
+//             onChange={(e) =>
+//               setDisplayOrder(
+//                 e.target.value ? Number(e.target.value) : ""
+//               )
+//             }
 //             className="p-2 border rounded w-full"
 //           />
 //         </div>
@@ -633,6 +831,7 @@
 //     );
 //   };
 
+//   // ----------------- TestimonialForm Component -----------------
 //   const TestimonialForm = () => {
 //     const [t, setT] = useState<Partial<Testimonial>>({
 //       rating: 5,
@@ -662,19 +861,21 @@
 //         const { data: newTestimonial, error } = await supabase
 //           .from("testimonials")
 //           .insert([payload])
-//           .select("*")
+//           .select()
 //           .single();
 
 //         if (error) throw error;
 
-//         if (newTestimonial) setTestimonials((prev) => [newTestimonial, ...prev]);
+//         if (newTestimonial) {
+//           setTestimonials((prev) => [newTestimonial, ...prev]);
+//         }
 
 //         setSuccessMessage("Testimonial added successfully");
 //         setT({ rating: 5, customer_name: "", comment: "" });
-
-//         await fetchData();
 //       } catch (error: any) {
-//         setErrorMessage("Failed to add testimonial: " + (error?.message || "Unknown"));
+//         setErrorMessage(
+//           "Failed to add testimonial: " + (error?.message || "Unknown")
+//         );
 //       } finally {
 //         setUploading(false);
 //       }
@@ -685,7 +886,9 @@
 //         onSubmit={handleSubmit}
 //         className="bg-gray-100 p-6 rounded-lg mb-8 grid gap-4 border border-gray-200 shadow-sm"
 //       >
-//         <h3 className="text-xl font-bold font-anton text-gray-800">Add Testimonial</h3>
+//         <h3 className="text-xl font-bold font-anton text-gray-800">
+//           Add Testimonial
+//         </h3>
 
 //         <div className="grid md:grid-cols-2 gap-4">
 //           <input
@@ -728,7 +931,6 @@
 //   };
 
 //   // ----------------- Render -----------------
-
 //   if (authLoading) {
 //     return (
 //       <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-600">
@@ -737,12 +939,13 @@
 //     );
 //   }
 
-//   // Not logged in => show Supabase auth login form
 //   if (!session) {
 //     return (
 //       <div className="min-h-screen flex items-center justify-center bg-gray-50">
 //         <div className="bg-white p-8 rounded-xl shadow-2xl w-96 border border-gray-100">
-//           <h1 className="text-3xl font-anton text-center mb-6 text-red-600">Admin Login</h1>
+//           <h1 className="text-3xl font-anton text-center mb-6 text-red-600">
+//             Admin Login
+//           </h1>
 
 //           {errorMessage && (
 //             <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm flex items-center gap-2">
@@ -788,7 +991,6 @@
 
 //   return (
 //     <div className="min-h-screen bg-white">
-//       {/* Toast Messages */}
 //       {(errorMessage || successMessage) && (
 //         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] min-w-[300px] text-center shadow-lg rounded-lg overflow-hidden animate-bounce-in">
 //           {errorMessage && (
@@ -804,7 +1006,6 @@
 //         </div>
 //       )}
 
-//       {/* Header */}
 //       <div className="bg-black text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
 //         <h1 className="text-2xl font-anton tracking-wide">
 //           CDM <span className="text-red-600">ADMIN</span>
@@ -819,14 +1020,15 @@
 //       </div>
 
 //       <div className="container mx-auto p-4 md:p-8 max-w-5xl">
-//         {/* Tabs */}
 //         <div className="flex gap-2 md:gap-4 mb-8 border-b border-gray-200 overflow-x-auto">
 //           {(["products", "categories", "testimonials"] as Tab[]).map((tab) => (
 //             <button
 //               key={tab}
 //               onClick={() => setActiveTab(tab)}
 //               className={`pb-3 px-6 font-bold capitalize whitespace-nowrap transition-all ${
-//                 activeTab === tab ? "border-b-4 border-red-600 text-red-600" : "text-gray-500 hover:text-gray-800"
+//                 activeTab === tab
+//                   ? "border-b-4 border-red-600 text-red-600"
+//                   : "text-gray-500 hover:text-gray-800"
 //               }`}
 //             >
 //               {tab}
@@ -834,16 +1036,36 @@
 //           ))}
 //         </div>
 
-//         {/* Products */}
 //         {activeTab === "products" && (
 //           <div className="animate-fade-in">
 //             <ProductForm />
 
+//             {editingOrder === "products" && (
+//               <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+//                 <button
+//                   onClick={() => toggleOrderEditing("products")}
+//                   disabled={uploading}
+//                   className="flex items-center gap-2 px-4 py-2 rounded font-bold transition-all bg-blue-600 text-white shadow-md hover:bg-blue-700 disabled:opacity-50"
+//                 >
+//                   <X size={16} /> Done Editing Order
+//                 </button>
+//                 <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
+//                   Use ↑↓ buttons or Display Order field to control product order.
+//                 </div>
+//               </div>
+//             )}
+
 //             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
-//               <h3 className="font-bold text-gray-500">Existing Products ({filteredProducts.length})</h3>
+//               <h3 className="font-bold text-gray-500">
+//                 Existing Products ({filteredProducts.length})
+//                 {editingOrder === "products" && " - Use ↑↓ to reorder"}
+//               </h3>
 
 //               <div className="relative w-full md:w-64">
-//                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+//                 <Search
+//                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+//                   size={18}
+//                 />
 //                 <input
 //                   type="text"
 //                   placeholder="Search products..."
@@ -864,90 +1086,145 @@
 //             </div>
 
 //             <div className="grid gap-4">
-//               {filteredProducts.map((p) => (
-//                 <div
-//                   key={p.id}
-//                   className={`flex items-center justify-between border p-4 rounded-lg hover:shadow-md transition-shadow bg-white ${
-//                     editingProduct?.id === p.id ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50" : "border-gray-200"
-//                   }`}
-//                 >
-//                   <div className="flex items-center gap-4">
-//                     <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden relative">
-//                       {p.image_url ? (
-//                         <img
-//                           src={p.image_url}
-//                           alt={p.name}
-//                           className={`w-full h-full object-cover ${p.stock === false ? "grayscale opacity-50" : ""}`}
-//                         />
-//                       ) : (
-//                         <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
-//                       )}
-
-//                       {p.featured && (
-//                         <div
-//                           className="absolute top-0 right-0 bg-yellow-400 text-xs p-1 rounded-bl shadow-sm z-10"
-//                           title="Best Seller"
-//                         >
-//                           <Star size={10} className="fill-black text-black" />
-//                         </div>
-//                       )}
-
-//                       {p.stock === false && (
-//                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] font-bold text-center leading-none">
-//                           NO STOCK
-//                         </div>
-//                       )}
-//                     </div>
-
-//                     <div>
-//                       <div className="flex items-center gap-2 flex-wrap">
-//                         <h4 className="font-bold text-lg text-gray-800">{p.name}</h4>
-//                         {p.featured && (
-//                           <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-bold border border-yellow-200">
-//                             Best Seller
-//                           </span>
+//               {filteredProducts.map((p) => {
+//                 const globalIndex = products.findIndex(
+//                   (prod) => prod.id === p.id
+//                 );
+//                 return (
+//                   <div
+//                     key={p.id}
+//                     className={`flex items-center justify-between border p-4 rounded-lg hover:shadow-md transition-all bg-white ${
+//                       editingProduct?.id === p.id
+//                         ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50"
+//                         : editingOrder === "products"
+//                         ? "border-blue-200 bg-blue-50"
+//                         : "border-gray-200"
+//                     }`}
+//                   >
+//                     <div className="flex items-center gap-4 flex-1">
+//                       <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden relative">
+//                         {p.image_url ? (
+//                           <img
+//                             src={p.image_url}
+//                             alt={p.name}
+//                             className={`w-full h-full object-cover ${
+//                               p.stock === false ? "grayscale opacity-50" : ""
+//                             }`}
+//                           />
+//                         ) : (
+//                           <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+//                             No Img
+//                           </div>
 //                         )}
+
+//                         {p.featured && (
+//                           <div
+//                             className="absolute top-0 right-0 bg-yellow-400 text-xs p-1 rounded-bl shadow-sm z-10"
+//                             title="Best Seller"
+//                           >
+//                             <Star size={10} className="fill-black text-black" />
+//                           </div>
+//                         )}
+
 //                         {p.stock === false && (
-//                           <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold border border-red-200">
-//                             Out of Stock
-//                           </span>
+//                           <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] font-bold text-center leading-none">
+//                             NO STOCK
+//                           </div>
 //                         )}
 //                       </div>
 
-//                       <p className="text-sm text-gray-500 font-mono">
-//                         ₹{p.price} <span className="mx-2">•</span> {p.category_slug}
-//                       </p>
+//                       <div className="flex-1 min-w-0">
+//                         <div className="flex items-center gap-2 flex-wrap">
+//                           <h4 className="font-bold text-lg text-gray-800 truncate">
+//                             {p.name}
+//                           </h4>
+//                           {p.featured && (
+//                             <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-bold border border-yellow-200">
+//                               Best Seller
+//                             </span>
+//                           )}
+//                           {p.stock === false && (
+//                             <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold border border-red-200">
+//                               Out of Stock
+//                             </span>
+//                           )}
+//                         </div>
+
+//                         <p className="text-sm text-gray-500 font-mono">
+//                           ₹{p.price} <span className="mx-2">•</span>{" "}
+//                           {p.category_slug}
+//                         </p>
+//                         {editingOrder === "products" && (
+//                           <p className="text-xs text-blue-600 font-mono mt-1">
+//                             Position: {(p as any).display_order || globalIndex + 1}
+//                           </p>
+//                         )}
+//                       </div>
+//                     </div>
+
+//                     <div className="flex items-center gap-2 ml-4">
+//                       {editingOrder === "products" && (
+//                         <>
+//                           <button
+//                             type="button"
+//                             onClick={() =>
+//                               moveItemUp("products", p.id, globalIndex)
+//                             }
+//                             disabled={globalIndex === 0 || uploading}
+//                             className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+//                             title="Move Up"
+//                           >
+//                             ↑
+//                           </button>
+//                           <button
+//                             type="button"
+//                             onClick={() =>
+//                               moveItemDown("products", p.id, globalIndex)
+//                             }
+//                             disabled={
+//                               globalIndex === products.length - 1 || uploading
+//                             }
+//                             className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+//                             title="Move Down"
+//                           >
+//                             ↓
+//                           </button>
+//                         </>
+//                       )}
+//                       <button
+//                         type="button"
+//                         onClick={() => startEditing(p)}
+//                         className="text-blue-500 hover:bg-blue-50 p-2 rounded transition-colors"
+//                         title="Edit Product"
+//                       >
+//                         <Pencil size={20} />
+//                       </button>
+//                       <button
+//                         type="button"
+//                         onClick={() => handleDelete("products", p.id)}
+//                         className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
+//                         title="Delete Product"
+//                       >
+//                         <Trash2 size={20} />
+//                       </button>
 //                     </div>
 //                   </div>
-
-//                   <div className="flex gap-2">
-//                     <button
-//                       type="button"
-//                       onClick={() => startEditing(p)}
-//                       className="text-blue-500 hover:bg-blue-50 p-2 rounded transition-colors"
-//                       title="Edit Product"
-//                     >
-//                       <Pencil size={20} />
-//                     </button>
-//                     <button
-//                       type="button"
-//                       onClick={() => handleDelete("products", p.id)}
-//                       className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
-//                       title="Delete Product"
-//                     >
-//                       <Trash2 size={20} />
-//                     </button>
-//                   </div>
-//                 </div>
-//               ))}
+//                 );
+//               })}
 
 //               {filteredProducts.length === 0 && (
 //                 <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
 //                   <p className="text-gray-400 mb-2">
-//                     {searchQuery ? `No products match "${searchQuery}"` : "No products found."}
+//                     {searchQuery
+//                       ? `No products match "${searchQuery}"`
+//                       : "No products found."}
 //                   </p>
 //                   {searchQuery && (
-//                     <button type="button" onClick={() => setSearchQuery("")} className="text-sm text-red-600 font-bold hover:underline">
+//                     <button
+//                       type="button"
+//                       onClick={() => setSearchQuery("")}
+//                       className="text-sm text-red-600 font-bold hover:underline"
+//                     >
 //                       Clear Search
 //                     </button>
 //                   )}
@@ -957,40 +1234,104 @@
 //           </div>
 //         )}
 
-//         {/* Categories */}
 //         {activeTab === "categories" && (
 //           <div className="animate-fade-in">
+//             {editingOrder === "categories" && (
+//               <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+//                 <button
+//                   onClick={() => toggleOrderEditing("categories")}
+//                   disabled={uploading}
+//                   className="flex items-center gap-2 px-4 py-2 rounded font-bold transition-all bg-blue-600 text-white shadow-md hover:bg-blue-700 disabled:opacity-50"
+//                 >
+//                   <X size={16} /> Done Editing Order
+//                 </button>
+//                 <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
+//                   Use ↑↓ buttons or Display Order field to control category order.
+//                 </div>
+//               </div>
+//             )}
+
 //             <CategoryForm />
-//             <h3 className="font-bold text-gray-500 mb-4">Existing Categories ({categories.length})</h3>
+
+//             <h3 className="font-bold text-gray-500 mb-4">
+//               Existing Categories ({categories.length})
+//               {editingOrder === "categories" && " - Use ↑↓ to reorder"}
+//             </h3>
+
 //             <div className="grid gap-3">
-//               {categories.map((c) => (
+//               {categories.map((c, index) => (
 //                 <div
 //                   key={c.id}
-//                   className="flex justify-between items-center border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all"
+//                   className={`flex items-center justify-between border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all ${
+//                     editingOrder === "categories"
+//                       ? "border-blue-200 bg-blue-50"
+//                       : "border-gray-200"
+//                   }`}
 //                 >
-//                   <div>
-//                     <span className="font-bold text-lg text-gray-800 block">{c.name}</span>
-//                     <span className="text-gray-500 text-sm font-mono bg-gray-100 px-2 py-1 rounded">ID: {c.slug}</span>
+//                   <div className="flex-1 min-w-0">
+//                     <span className="font-bold text-lg text-gray-800 block truncate">
+//                       {c.name}
+//                     </span>
+//                     <span className="text-gray-500 text-sm font-mono bg-gray-100 px-2 py-1 rounded">
+//                       ID: {c.slug}
+//                     </span>
+//                     {editingOrder === "categories" && (
+//                       <p className="text-xs text-blue-600 font-mono mt-1">
+//                         Position: {(c as any).display_order || index + 1}
+//                       </p>
+//                     )}
 //                   </div>
-//                   <button
-//                     type="button"
-//                     onClick={() => handleDelete("categories", c.id)}
-//                     className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
-//                     title="Delete Category"
-//                   >
-//                     <Trash2 size={20} />
-//                   </button>
+
+//                   <div className="flex items-center gap-2 ml-4">
+//                     {editingOrder === "categories" && (
+//                       <>
+//                         <button
+//                           type="button"
+//                           onClick={() =>
+//                             moveItemUp("categories", c.id, index)
+//                           }
+//                           disabled={index === 0 || uploading}
+//                           className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+//                           title="Move Up"
+//                         >
+//                           ↑
+//                         </button>
+//                         <button
+//                           type="button"
+//                           onClick={() =>
+//                             moveItemDown("categories", c.id, index)
+//                           }
+//                           disabled={
+//                             index === categories.length - 1 || uploading
+//                           }
+//                           className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+//                           title="Move Down"
+//                         >
+//                           ↓
+//                         </button>
+//                       </>
+//                     )}
+//                     <button
+//                       type="button"
+//                       onClick={() => handleDelete("categories", c.id)}
+//                       className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
+//                       title="Delete Category"
+//                     >
+//                       <Trash2 size={20} />
+//                     </button>
+//                   </div>
 //                 </div>
 //               ))}
 //             </div>
 //           </div>
 //         )}
 
-//         {/* Testimonials */}
 //         {activeTab === "testimonials" && (
 //           <div className="animate-fade-in">
 //             <TestimonialForm />
-//             <h3 className="font-bold text-gray-500 mb-4">Existing Testimonials ({testimonials.length})</h3>
+//             <h3 className="font-bold text-gray-500 mb-4">
+//               Existing Testimonials ({testimonials.length})
+//             </h3>
 //             <div className="grid md:grid-cols-2 gap-4">
 //               {testimonials.map((t) => (
 //                 <div
@@ -1005,10 +1346,16 @@
 //                   >
 //                     <Trash2 size={18} />
 //                   </button>
-//                   <p className="italic text-gray-600 mb-4 text-lg">"{t.comment}"</p>
+//                   <p className="italic text-gray-600 mb-4 text-lg">
+//                     "{t.comment}"
+//                   </p>
 //                   <div className="flex items-center gap-2">
-//                     <span className="font-bold text-gray-800">{t.customer_name}</span>
-//                     <span className="text-yellow-500 text-sm font-bold">★ {t.rating}/5</span>
+//                     <span className="font-bold text-gray-800">
+//                       {t.customer_name}
+//                     </span>
+//                     <span className="text-yellow-500 text-sm font-bold">
+//                       ★ {t.rating}/5
+//                     </span>
 //                   </div>
 //                 </div>
 //               ))}
@@ -1019,6 +1366,7 @@
 //     </div>
 //   );
 // }
+
 import { useEffect, useMemo, useState } from "react";
 import { supabase, Product, Category, Testimonial } from "../lib/supabase";
 import {
@@ -1317,7 +1665,8 @@ export default function AdminPage() {
       display_order: undefined,
     };
 
-    const [formData, setFormData] = useState<Partial<Product & { display_order?: number }>>(emptyForm);
+    const [formData, setFormData] =
+      useState<Partial<Product & { display_order?: number }>>(emptyForm);
     const [file, setFile] = useState<File | null>(null);
 
     useEffect(() => {
@@ -1339,7 +1688,7 @@ export default function AdminPage() {
         ) as HTMLInputElement | null;
         if (fileInput) fileInput.value = "";
       }
-    }, [editingProduct, categories]);  
+    }, [editingProduct, categories]);
 
     useEffect(() => {
       if (editingProduct) return;
@@ -1376,10 +1725,9 @@ export default function AdminPage() {
           dupQuery = dupQuery.neq("id", editingProduct.id);
         }
 
-        const { data: existing, error: dupError } =
-          await dupQuery.maybeSingle();
+        const { data: dupList, error: dupError } = await dupQuery;
         if (dupError) throw dupError;
-        if (existing) {
+        if (dupList && dupList.length > 0) {
           setErrorMessage(
             `A product with the name "${normalizedName}" already exists.`
           );
@@ -1398,9 +1746,10 @@ export default function AdminPage() {
         const manualOrder = formData.display_order
           ? Number(formData.display_order)
           : undefined;
-        const maxOrder = products.length > 0
-          ? Math.max(...products.map((p) => (p as any).display_order || 0))
-          : 0;
+        const maxOrder =
+          products.length > 0
+            ? Math.max(...products.map((p) => (p as any).display_order || 0))
+            : 0;
 
         const payload: any = {
           name: normalizedName,
@@ -1445,7 +1794,6 @@ export default function AdminPage() {
             .select()
             .single();
           if (error) throw error;
-
           if (newProduct) {
             updatedProducts = [...products, newProduct];
           }
@@ -1634,7 +1982,10 @@ export default function AdminPage() {
                 htmlFor="featured-checkbox"
                 className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2"
               >
-                <Star size={16} className="text-yellow-500 fill-yellow-500" />{" "}
+                <Star
+                  size={16}
+                  className="text-yellow-500 fill-yellow-500"
+                />{" "}
                 Best Seller
               </label>
             </div>
@@ -1833,9 +2184,7 @@ export default function AdminPage() {
             placeholder="Ex: 1"
             value={displayOrder}
             onChange={(e) =>
-              setDisplayOrder(
-                e.target.value ? Number(e.target.value) : ""
-              )
+              setDisplayOrder(e.target.value ? Number(e.target.value) : "")
             }
             className="p-2 border rounded w-full"
           />
@@ -2129,7 +2478,9 @@ export default function AdminPage() {
                             src={p.image_url}
                             alt={p.name}
                             className={`w-full h-full object-cover ${
-                              p.stock === false ? "grayscale opacity-50" : ""
+                              p.stock === false
+                                ? "grayscale opacity-50"
+                                : ""
                             }`}
                           />
                         ) : (
@@ -2143,7 +2494,10 @@ export default function AdminPage() {
                             className="absolute top-0 right-0 bg-yellow-400 text-xs p-1 rounded-bl shadow-sm z-10"
                             title="Best Seller"
                           >
-                            <Star size={10} className="fill-black text-black" />
+                            <Star
+                              size={10}
+                              className="fill-black text-black"
+                            />
                           </div>
                         )}
 
@@ -2387,5 +2741,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-
