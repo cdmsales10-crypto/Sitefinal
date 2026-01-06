@@ -1019,7 +1019,7 @@
 //     </div>
 //   );
 // }
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase, Product, Category, Testimonial } from "../lib/supabase";
 import {
   Trash2,
@@ -1169,7 +1169,11 @@ export default function AdminPage() {
   };
 
   // ---- Manual Order Controls (Up/Down buttons) ----
-  const moveItemUp = async (table: string, id: string, currentIndex: number) => {
+  const moveItemUp = async (
+    table: string,
+    id: string,
+    currentIndex: number
+  ) => {
     if (currentIndex === 0) return;
 
     const items = table === "products" ? products : categories;
@@ -1180,17 +1184,15 @@ export default function AdminPage() {
     // Update display_order
     const updatedItems = newItems.map((item, index) => ({
       ...item,
-      display_order: index + 1
+      display_order: index + 1,
     }));
 
     try {
       setUploading(true);
-      const { error } = await supabase
-        .from(table)
-        .upsert(
-          updatedItems.map(({ id, display_order }) => ({ id, display_order })),
-          { onConflict: "id" }
-        );
+      const { error } = await supabase.from(table).upsert(
+        updatedItems.map(({ id, display_order }) => ({ id, display_order })),
+        { onConflict: "id" }
+      );
 
       if (error) throw error;
 
@@ -1202,13 +1204,19 @@ export default function AdminPage() {
 
       setSuccessMessage("Order updated successfully!");
     } catch (error: any) {
-      setErrorMessage("Failed to update order: " + (error?.message || "Unknown"));
+      setErrorMessage(
+        "Failed to update order: " + (error?.message || "Unknown")
+      );
     } finally {
       setUploading(false);
     }
   };
 
-  const moveItemDown = async (table: string, id: string, currentIndex: number) => {
+  const moveItemDown = async (
+    table: string,
+    id: string,
+    currentIndex: number
+  ) => {
     const items = table === "products" ? products : categories;
     if (currentIndex === items.length - 1) return;
 
@@ -1219,17 +1227,15 @@ export default function AdminPage() {
     // Update display_order
     const updatedItems = newItems.map((item, index) => ({
       ...item,
-      display_order: index + 1
+      display_order: index + 1,
     }));
 
     try {
       setUploading(true);
-      const { error } = await supabase
-        .from(table)
-        .upsert(
-          updatedItems.map(({ id, display_order }) => ({ id, display_order })),
-          { onConflict: "id" }
-        );
+      const { error } = await supabase.from(table).upsert(
+        updatedItems.map(({ id, display_order }) => ({ id, display_order })),
+        { onConflict: "id" }
+      );
 
       if (error) throw error;
 
@@ -1241,7 +1247,9 @@ export default function AdminPage() {
 
       setSuccessMessage("Order updated successfully!");
     } catch (error: any) {
-      setErrorMessage("Failed to update order: " + (error?.message || "Unknown"));
+      setErrorMessage(
+        "Failed to update order: " + (error?.message || "Unknown")
+      );
     } finally {
       setUploading(false);
     }
@@ -1257,18 +1265,24 @@ export default function AdminPage() {
 
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+    formData.append(
+      "upload_preset",
+      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+    );
 
     try {
       const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        `https://api.cloudinary.com/v1_1/${
+          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+        }/image/upload`,
         { method: "POST", body: formData }
       );
 
       if (!res.ok) throw new Error("Cloudinary upload failed");
 
       const data = await res.json();
-      if (!data?.secure_url) throw new Error("Cloudinary did not return secure_url");
+      if (!data?.secure_url)
+        throw new Error("Cloudinary did not return secure_url");
       return data.secure_url as string;
     } finally {
       setUploading(false);
@@ -1329,7 +1343,9 @@ export default function AdminPage() {
       if (editingProduct) {
         setFormData({ ...editingProduct });
         setFile(null);
-        const fileInput = document.getElementById("product-file-input") as HTMLInputElement | null;
+        const fileInput = document.getElementById(
+          "product-file-input"
+        ) as HTMLInputElement | null;
         if (fileInput) fileInput.value = "";
       } else {
         setFormData({
@@ -1337,7 +1353,9 @@ export default function AdminPage() {
           category_slug: categories[0]?.slug || "",
         });
         setFile(null);
-        const fileInput = document.getElementById("product-file-input") as HTMLInputElement | null;
+        const fileInput = document.getElementById(
+          "product-file-input"
+        ) as HTMLInputElement | null;
         if (fileInput) fileInput.value = "";
       }
     }, [editingProduct, categories]);
@@ -1347,7 +1365,7 @@ export default function AdminPage() {
       if (!formData.category_slug && categories.length > 0) {
         setFormData((prev) => ({ ...prev, category_slug: categories[0].slug }));
       }
-    }, [categories.length, formData.category_slug]);
+    }, [categories.length, formData.category_slug, editingProduct]);
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -1377,10 +1395,13 @@ export default function AdminPage() {
           dupQuery = dupQuery.neq("id", editingProduct.id);
         }
 
-        const { data: existing, error: dupError } = await dupQuery.maybeSingle();
+        const { data: existing, error: dupError } =
+          await dupQuery.maybeSingle();
         if (dupError) throw dupError;
         if (existing) {
-          setErrorMessage(`A product with the name "${normalizedName}" already exists.`);
+          setErrorMessage(
+            `A product with the name "${normalizedName}" already exists.`
+          );
           return;
         }
 
@@ -1396,7 +1417,10 @@ export default function AdminPage() {
           name: normalizedName,
           category_slug: formData.category_slug,
           price: Number(formData.price),
-          mrp: formData.mrp && Number(formData.mrp) > 0 ? Number(formData.mrp) : null,
+          mrp:
+            formData.mrp && Number(formData.mrp) > 0
+              ? Number(formData.mrp)
+              : null,
           description: (formData.description || "").trim(),
           image_url: imageUrl || null,
           featured: !!formData.featured,
@@ -1414,14 +1438,16 @@ export default function AdminPage() {
             .single();
 
           if (error) throw error;
-          
+
           if (updatedProduct) {
-            updatedProducts = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
+            updatedProducts = products.map((p) =>
+              p.id === updatedProduct.id ? updatedProduct : p
+            );
           }
         } else {
           // INSERT - new product gets display_order at end
           payload.display_order = products.length + 1;
-          
+
           const { data: newProduct, error } = await supabase
             .from("products")
             .insert([payload])
@@ -1436,7 +1462,11 @@ export default function AdminPage() {
         }
 
         setProducts(updatedProducts);
-        setSuccessMessage(editingProduct ? "Product updated successfully!" : "Product added successfully!");
+        setSuccessMessage(
+          editingProduct
+            ? "Product updated successfully!"
+            : "Product added successfully!"
+        );
         setEditingProduct(null);
         setFile(null);
         setFormData({
@@ -1444,7 +1474,9 @@ export default function AdminPage() {
           category_slug: categories[0]?.slug || "",
         });
 
-        const fileInput = document.getElementById("product-file-input") as HTMLInputElement | null;
+        const fileInput = document.getElementById(
+          "product-file-input"
+        ) as HTMLInputElement | null;
         if (fileInput) fileInput.value = "";
       } catch (error: any) {
         console.error("Error in product submit:", error);
@@ -1460,7 +1492,9 @@ export default function AdminPage() {
       <form
         onSubmit={handleSubmit}
         className={`p-6 rounded-lg mb-8 grid gap-4 border shadow-sm transition-colors ${
-          editingProduct ? "bg-yellow-50 border-yellow-200" : "bg-gray-100 border-gray-200"
+          editingProduct
+            ? "bg-yellow-50 border-yellow-200"
+            : "bg-gray-100 border-gray-200"
         }`}
       >
         <div className="flex justify-between items-center mb-2">
@@ -1482,7 +1516,9 @@ export default function AdminPage() {
               onClick={() => {
                 setEditingProduct(null);
                 setFile(null);
-                const fileInput = document.getElementById("product-file-input") as HTMLInputElement | null;
+                const fileInput = document.getElementById(
+                  "product-file-input"
+                ) as HTMLInputElement | null;
                 if (fileInput) fileInput.value = "";
               }}
               className="text-sm text-gray-500 hover:text-red-600 flex items-center gap-1 font-bold bg-white px-3 py-1 rounded border border-gray-300 hover:border-red-300 transition-colors"
@@ -1499,7 +1535,9 @@ export default function AdminPage() {
               required
               placeholder="Ex: Carnauba Wax"
               className="p-2 border rounded"
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               value={formData.name || ""}
             />
           </div>
@@ -1509,10 +1547,14 @@ export default function AdminPage() {
             <select
               className="p-2 border rounded"
               value={formData.category_slug || ""}
-              onChange={(e) => setFormData({ ...formData, category_slug: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, category_slug: e.target.value })
+              }
             >
               {categories.length === 0 ? (
-                <option value="" disabled>No categories found</option>
+                <option value="" disabled>
+                  No categories found
+                </option>
               ) : (
                 categories.map((c) => (
                   <option key={c.id} value={c.slug}>
@@ -1524,7 +1566,9 @@ export default function AdminPage() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-gray-700">Price (₹)*</label>
+            <label className="text-sm font-bold text-gray-700">
+              Price (₹)*
+            </label>
             <input
               required
               type="number"
@@ -1532,13 +1576,17 @@ export default function AdminPage() {
               step="0.01"
               placeholder="Ex: 499"
               className="p-2 border rounded"
-              onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+              onChange={(e) =>
+                setFormData({ ...formData, price: Number(e.target.value) })
+              }
               value={formData.price ?? ""}
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-bold text-gray-700">MRP (Optional)</label>
+            <label className="text-sm font-bold text-gray-700">
+              MRP (Optional)
+            </label>
             <input
               type="number"
               min="0"
@@ -1562,13 +1610,16 @@ export default function AdminPage() {
                 type="checkbox"
                 className="w-5 h-5 accent-red-600 cursor-pointer"
                 checked={!!formData.featured}
-                onChange={(e) => setFormData({ ...formData, featured: e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, featured: e.target.checked })
+                }
               />
               <label
                 htmlFor="featured-checkbox"
                 className="font-bold text-gray-700 cursor-pointer select-none flex items-center gap-2"
               >
-                <Star size={16} className="text-yellow-500 fill-yellow-500" /> Best Seller
+                <Star size={16} className="text-yellow-500 fill-yellow-500" />{" "}
+                Best Seller
               </label>
             </div>
 
@@ -1578,7 +1629,9 @@ export default function AdminPage() {
                 type="checkbox"
                 className="w-5 h-5 accent-black cursor-pointer"
                 checked={isOutOfStock}
-                onChange={(e) => setFormData({ ...formData, stock: !e.target.checked })}
+                onChange={(e) =>
+                  setFormData({ ...formData, stock: !e.target.checked })
+                }
               />
               <label
                 htmlFor="stock-checkbox"
@@ -1616,7 +1669,9 @@ export default function AdminPage() {
           placeholder="Description"
           className="p-2 border rounded w-full"
           rows={3}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
           value={formData.description || ""}
         />
 
@@ -1624,7 +1679,9 @@ export default function AdminPage() {
           disabled={uploading}
           type="submit"
           className={`${
-            editingProduct ? "bg-yellow-500 hover:bg-yellow-600" : "bg-red-600 hover:bg-red-700"
+            editingProduct
+              ? "bg-yellow-500 hover:bg-yellow-600"
+              : "bg-red-600 hover:bg-red-700"
           } text-white py-3 px-6 rounded flex items-center justify-center gap-2 font-bold transition-all disabled:opacity-50 text-lg shadow-md`}
         >
           {uploading ? (
@@ -1677,7 +1734,7 @@ export default function AdminPage() {
         const payload = {
           name: name.trim(),
           slug: slug.trim(),
-          display_order: categories.length + 1
+          display_order: categories.length + 1,
         };
 
         const { data: newCategory, error } = await supabase
@@ -1689,14 +1746,16 @@ export default function AdminPage() {
         if (error) throw error;
 
         if (newCategory) {
-          setCategories(prev => [...prev, newCategory]);
+          setCategories((prev) => [...prev, newCategory]);
         }
 
         setSuccessMessage("Category added successfully");
         setName("");
         setSlug("");
       } catch (error: any) {
-        setErrorMessage("Failed to add category: " + (error?.message || "Unknown"));
+        setErrorMessage(
+          "Failed to add category: " + (error?.message || "Unknown")
+        );
       } finally {
         setUploading(false);
       }
@@ -1708,7 +1767,9 @@ export default function AdminPage() {
         className="bg-gray-100 p-6 rounded-lg mb-8 flex flex-col md:flex-row gap-4 items-end border border-gray-200 shadow-sm"
       >
         <div className="flex-1 w-full">
-          <label className="text-sm font-bold text-gray-700 block mb-1">Display Name</label>
+          <label className="text-sm font-bold text-gray-700 block mb-1">
+            Display Name
+          </label>
           <input
             required
             placeholder="Ex: Car Shampoos"
@@ -1719,12 +1780,16 @@ export default function AdminPage() {
         </div>
 
         <div className="flex-1 w-full">
-          <label className="text-sm font-bold text-gray-700 block mb-1">Unique ID (Slug)</label>
+          <label className="text-sm font-bold text-gray-700 block mb-1">
+            Unique ID (Slug)
+          </label>
           <input
             required
             placeholder="Ex: car_shampoos"
             value={slug}
-            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "_"))}
+            onChange={(e) =>
+              setSlug(e.target.value.toLowerCase().replace(/\s+/g, "_"))
+            }
             className="p-2 border rounded w-full"
           />
         </div>
@@ -1782,7 +1847,9 @@ export default function AdminPage() {
         setSuccessMessage("Testimonial added successfully");
         setT({ rating: 5, customer_name: "", comment: "" });
       } catch (error: any) {
-        setErrorMessage("Failed to add testimonial: " + (error?.message || "Unknown"));
+        setErrorMessage(
+          "Failed to add testimonial: " + (error?.message || "Unknown")
+        );
       } finally {
         setUploading(false);
       }
@@ -1793,7 +1860,9 @@ export default function AdminPage() {
         onSubmit={handleSubmit}
         className="bg-gray-100 p-6 rounded-lg mb-8 grid gap-4 border border-gray-200 shadow-sm"
       >
-        <h3 className="text-xl font-bold font-anton text-gray-800">Add Testimonial</h3>
+        <h3 className="text-xl font-bold font-anton text-gray-800">
+          Add Testimonial
+        </h3>
 
         <div className="grid md:grid-cols-2 gap-4">
           <input
@@ -1848,7 +1917,9 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="bg-white p-8 rounded-xl shadow-2xl w-96 border border-gray-100">
-          <h1 className="text-3xl font-anton text-center mb-6 text-red-600">Admin Login</h1>
+          <h1 className="text-3xl font-anton text-center mb-6 text-red-600">
+            Admin Login
+          </h1>
 
           {errorMessage && (
             <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm flex items-center gap-2">
@@ -1932,7 +2003,9 @@ export default function AdminPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`pb-3 px-6 font-bold capitalize whitespace-nowrap transition-all ${
-                activeTab === tab ? "border-b-4 border-red-600 text-red-600" : "text-gray-500 hover:text-gray-800"
+                activeTab === tab
+                  ? "border-b-4 border-red-600 text-red-600"
+                  : "text-gray-500 hover:text-gray-800"
               }`}
             >
               {tab}
@@ -1956,7 +2029,8 @@ export default function AdminPage() {
                   <X size={16} /> Done Editing Order
                 </button>
                 <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
-                  Drag items using ↑↓ buttons. Items will appear in this exact order on frontend.
+                  Drag items using ↑↓ buttons. Items will appear in this exact
+                  order on frontend.
                 </div>
               </div>
             )}
@@ -1968,7 +2042,10 @@ export default function AdminPage() {
               </h3>
 
               <div className="relative w-full md:w-64">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
                 <input
                   type="text"
                   placeholder="Search products..."
@@ -1989,17 +2066,19 @@ export default function AdminPage() {
             </div>
 
             <div className="grid gap-4">
-              {filteredProducts.map((p, index) => {
-                const globalIndex = products.findIndex(prod => prod.id === p.id);
+              {filteredProducts.map((p) => {
+                const globalIndex = products.findIndex(
+                  (prod) => prod.id === p.id
+                );
                 return (
                   <div
                     key={p.id}
                     className={`flex items-center justify-between border p-4 rounded-lg hover:shadow-md transition-all bg-white ${
-                      editingProduct?.id === p.id 
-                        ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50" 
-                        : editingOrder === "products" 
-                          ? "border-blue-200 bg-blue-50" 
-                          : "border-gray-200"
+                      editingProduct?.id === p.id
+                        ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50"
+                        : editingOrder === "products"
+                        ? "border-blue-200 bg-blue-50"
+                        : "border-gray-200"
                     }`}
                   >
                     <div className="flex items-center gap-4 flex-1">
@@ -2008,14 +2087,21 @@ export default function AdminPage() {
                           <img
                             src={p.image_url}
                             alt={p.name}
-                            className={`w-full h-full object-cover ${p.stock === false ? "grayscale opacity-50" : ""}`}
+                            className={`w-full h-full object-cover ${
+                              p.stock === false ? "grayscale opacity-50" : ""
+                            }`}
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                            No Img
+                          </div>
                         )}
 
                         {p.featured && (
-                          <div className="absolute top-0 right-0 bg-yellow-400 text-xs p-1 rounded-bl shadow-sm z-10" title="Best Seller">
+                          <div
+                            className="absolute top-0 right-0 bg-yellow-400 text-xs p-1 rounded-bl shadow-sm z-10"
+                            title="Best Seller"
+                          >
                             <Star size={10} className="fill-black text-black" />
                           </div>
                         )}
@@ -2029,7 +2115,9 @@ export default function AdminPage() {
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-bold text-lg text-gray-800 truncate">{p.name}</h4>
+                          <h4 className="font-bold text-lg text-gray-800 truncate">
+                            {p.name}
+                          </h4>
                           {p.featured && (
                             <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-bold border border-yellow-200">
                               Best Seller
@@ -2043,7 +2131,8 @@ export default function AdminPage() {
                         </div>
 
                         <p className="text-sm text-gray-500 font-mono">
-                          ₹{p.price} <span className="mx-2">•</span> {p.category_slug}
+                          ₹{p.price} <span className="mx-2">•</span>{" "}
+                          {p.category_slug}
                         </p>
                         {editingOrder === "products" && (
                           <p className="text-xs text-blue-600 font-mono mt-1">
@@ -2058,7 +2147,9 @@ export default function AdminPage() {
                         <>
                           <button
                             type="button"
-                            onClick={() => moveItemUp("products", p.id, globalIndex)}
+                            onClick={() =>
+                              moveItemUp("products", p.id, globalIndex)
+                            }
                             disabled={globalIndex === 0 || uploading}
                             className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Move Up"
@@ -2067,8 +2158,12 @@ export default function AdminPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => moveItemDown("products", p.id, globalIndex)}
-                            disabled={globalIndex === products.length - 1 || uploading}
+                            onClick={() =>
+                              moveItemDown("products", p.id, globalIndex)
+                            }
+                            disabled={
+                              globalIndex === products.length - 1 || uploading
+                            }
                             className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Move Down"
                           >
@@ -2100,12 +2195,14 @@ export default function AdminPage() {
               {filteredProducts.length === 0 && (
                 <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                   <p className="text-gray-400 mb-2">
-                    {searchQuery ? `No products match "${searchQuery}"` : "No products found."}
+                    {searchQuery
+                      ? `No products match "${searchQuery}"`
+                      : "No products found."}
                   </p>
                   {searchQuery && (
-                    <button 
-                      type="button" 
-                      onClick={() => setSearchQuery("")} 
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
                       className="text-sm text-red-600 font-bold hover:underline"
                     >
                       Clear Search
@@ -2131,46 +2228,51 @@ export default function AdminPage() {
                   <X size={16} /> Done Editing Order
                 </button>
                 <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
-                  Use ↑↓ buttons to reorder. Items will appear in this exact order on frontend.
+                  Use ↑↓ buttons to reorder. Items will appear in this exact
+                  order on frontend.
                 </div>
               </div>
             )}
 
             <CategoryForm />
-            
+
             <h3 className="font-bold text-gray-500 mb-4">
               Existing Categories ({categories.length})
               {editingOrder === "categories" && " - Use ↑↓ to reorder"}
             </h3>
-            
+
             <div className="grid gap-3">
               {categories.map((c, index) => (
                 <div
                   key={c.id}
                   className={`flex items-center justify-between border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all ${
-                    editingOrder === "categories" 
-                      ? "border-blue-200 bg-blue-50" 
+                    editingOrder === "categories"
+                      ? "border-blue-200 bg-blue-50"
                       : "border-gray-200"
                   }`}
                 >
                   <div className="flex-1 min-w-0">
-                    <span className="font-bold text-lg text-gray-800 block truncate">{c.name}</span>
+                    <span className="font-bold text-lg text-gray-800 block truncate">
+                      {c.name}
+                    </span>
                     <span className="text-gray-500 text-sm font-mono bg-gray-100 px-2 py-1 rounded">
                       ID: {c.slug}
                     </span>
                     {editingOrder === "categories" && (
                       <p className="text-xs text-blue-600 font-mono mt-1">
-                        Position: #{c.display_order || index + 1}
+                        Position: #{(c as any).display_order || index + 1}
                       </p>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center gap-2 ml-4">
                     {editingOrder === "categories" && (
                       <>
                         <button
                           type="button"
-                          onClick={() => moveItemUp("categories", c.id, index)}
+                          onClick={() =>
+                            moveItemUp("categories", c.id, index)
+                          }
                           disabled={index === 0 || uploading}
                           className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Move Up"
@@ -2179,8 +2281,12 @@ export default function AdminPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => moveItemDown("categories", c.id, index)}
-                          disabled={index === categories.length - 1 || uploading}
+                          onClick={() =>
+                            moveItemDown("categories", c.id, index)
+                          }
+                          disabled={
+                            index === categories.length - 1 || uploading
+                          }
                           className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           title="Move Down"
                         >
@@ -2207,7 +2313,9 @@ export default function AdminPage() {
         {activeTab === "testimonials" && (
           <div className="animate-fade-in">
             <TestimonialForm />
-            <h3 className="font-bold text-gray-500 mb-4">Existing Testimonials ({testimonials.length})</h3>
+            <h3 className="font-bold text-gray-500 mb-4">
+              Existing Testimonials ({testimonials.length})
+            </h3>
             <div className="grid md:grid-cols-2 gap-4">
               {testimonials.map((t) => (
                 <div
@@ -2222,10 +2330,16 @@ export default function AdminPage() {
                   >
                     <Trash2 size={18} />
                   </button>
-                  <p className="italic text-gray-600 mb-4 text-lg">"{t.comment}"</p>
+                  <p className="italic text-gray-600 mb-4 text-lg">
+                    "{t.comment}"
+                  </p>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-800">{t.customer_name}</span>
-                    <span className="text-yellow-500 text-sm font-bold">★ {t.rating}/5</span>
+                    <span className="font-bold text-gray-800">
+                      {t.customer_name}
+                    </span>
+                    <span className="text-yellow-500 text-sm font-bold">
+                      ★ {t.rating}/5
+                    </span>
                   </div>
                 </div>
               ))}
@@ -2236,3 +2350,4 @@ export default function AdminPage() {
     </div>
   );
 }
+
