@@ -1032,9 +1032,6 @@ import {
   Pencil,
   X,
   Search,
-  GripVertical,
-  ArrowUp01,
-  ArrowDown01,
 } from "lucide-react";
 
 type Tab = "products" | "categories" | "testimonials";
@@ -1133,13 +1130,15 @@ export default function AdminPage() {
     if (error) setErrorMessage(error.message);
     setEditingProduct(null);
     setEditingOrder(null);
+    setDraggedItem(null);
   };
 
-  // ---- Data fetching ----
+  // ---- Data fetching with display_order ----
   const fetchData = async () => {
     try {
       setErrorMessage(null);
 
+      // Products ordered by display_order first
       const { data: p, error: pError } = await supabase
         .from("products")
         .select("*")
@@ -1148,6 +1147,7 @@ export default function AdminPage() {
       if (pError) throw pError;
       setProducts(p || []);
 
+      // Categories ordered by display_order first
       const { data: c, error: cError } = await supabase
         .from("categories")
         .select("*")
@@ -1168,29 +1168,14 @@ export default function AdminPage() {
     }
   };
 
-  // ---- Drag & Drop Handlers ----
-  const handleDragStart = useCallback((id: string) => {
-    setDraggedItem(id);
-  }, []);
+  // ---- Manual Order Controls (Up/Down buttons) ----
+  const moveItemUp = async (table: string, id: string, currentIndex: number) => {
+    if (currentIndex === 0) return;
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-  }, []);
-
-  const handleDrop = useCallback(async (droppedId: string, targetId: string) => {
-    if (draggedItem === droppedId || !draggedItem) return;
-
-    const table = activeTab === "products" ? "products" : "categories";
-    const items = activeTab === "products" ? products : categories;
-    
-    const draggedIndex = items.findIndex(item => item.id === draggedItem);
-    const targetIndex = items.findIndex(item => item.id === targetId);
-    
-    if (draggedIndex === -1 || targetIndex === -1) return;
-
+    const items = table === "products" ? products : categories;
     const newItems = [...items];
-    const [draggedItemData] = newItems.splice(draggedIndex, 1);
-    newItems.splice(targetIndex, 0, draggedItemData);
+    const [movedItem] = newItems.splice(currentIndex, 1);
+    newItems.splice(currentIndex - 1, 0, movedItem);
 
     // Update display_order
     const updatedItems = newItems.map((item, index) => ({
@@ -1209,7 +1194,6 @@ export default function AdminPage() {
 
       if (error) throw error;
 
-      // Update local state
       if (table === "products") {
         setProducts(newItems as Product[]);
       } else {
@@ -1217,18 +1201,55 @@ export default function AdminPage() {
       }
 
       setSuccessMessage("Order updated successfully!");
-      setDraggedItem(null);
     } catch (error: any) {
       setErrorMessage("Failed to update order: " + (error?.message || "Unknown"));
     } finally {
       setUploading(false);
     }
-  }, [activeTab, products, categories, draggedItem]);
+  };
 
-  const toggleOrderEditing = useCallback((tab: Tab | null) => {
+  const moveItemDown = async (table: string, id: string, currentIndex: number) => {
+    const items = table === "products" ? products : categories;
+    if (currentIndex === items.length - 1) return;
+
+    const newItems = [...items];
+    const [movedItem] = newItems.splice(currentIndex, 1);
+    newItems.splice(currentIndex + 1, 0, movedItem);
+
+    // Update display_order
+    const updatedItems = newItems.map((item, index) => ({
+      ...item,
+      display_order: index + 1
+    }));
+
+    try {
+      setUploading(true);
+      const { error } = await supabase
+        .from(table)
+        .upsert(
+          updatedItems.map(({ id, display_order }) => ({ id, display_order })),
+          { onConflict: "id" }
+        );
+
+      if (error) throw error;
+
+      if (table === "products") {
+        setProducts(newItems as Product[]);
+      } else {
+        setCategories(newItems as Category[]);
+      }
+
+      setSuccessMessage("Order updated successfully!");
+    } catch (error: any) {
+      setErrorMessage("Failed to update order: " + (error?.message || "Unknown"));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const toggleOrderEditing = (tab: Tab | null) => {
     setEditingOrder(editingOrder ? null : tab);
-    setDraggedItem(null);
-  }, [editingOrder]);
+  };
 
   // ---- Image upload ----
   const uploadImage = async (file: File): Promise<string> => {
@@ -1288,8 +1309,7 @@ export default function AdminPage() {
     return products.filter((p) => (p.name || "").toLowerCase().includes(q));
   }, [products, searchQuery]);
 
-  // ----------------- Sub Components -----------------
-
+  // ----------------- ProductForm Component -----------------
   const ProductForm = () => {
     const emptyForm: Partial<Product> = {
       category_slug: categories[0]?.slug || "",
@@ -1372,7 +1392,7 @@ export default function AdminPage() {
           imageUrl = editingProduct.image_url;
         }
 
-        const payload = {
+        const payload: any = {
           name: normalizedName,
           category_slug: formData.category_slug,
           price: Number(formData.price),
@@ -1385,21 +1405,21 @@ export default function AdminPage() {
 
         let updatedProducts = products;
         if (editingProduct?.id) {
+          // UPDATE
           const { data: updatedProduct, error } = await supabase
             .from("products")
             .update(payload)
             .eq("id", editingProduct.id)
             .select()
-            .maybeSingle();
+            .single();
 
           if (error) throw error;
           
-          // Update local state maintaining order
           if (updatedProduct) {
             updatedProducts = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
           }
         } else {
-          // New product gets display_order at end
+          // INSERT - new product gets display_order at end
           payload.display_order = products.length + 1;
           
           const { data: newProduct, error } = await supabase
@@ -1492,9 +1512,7 @@ export default function AdminPage() {
               onChange={(e) => setFormData({ ...formData, category_slug: e.target.value })}
             >
               {categories.length === 0 ? (
-                <option value="" disabled>
-                  No categories found
-                </option>
+                <option value="" disabled>No categories found</option>
               ) : (
                 categories.map((c) => (
                   <option key={c.id} value={c.slug}>
@@ -1625,44 +1643,199 @@ export default function AdminPage() {
     );
   };
 
-  const OrderControls = ({ tab }: { tab: Tab }) => (
-    <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-      <button
-        onClick={() => toggleOrderEditing(tab)}
-        disabled={uploading}
-        className={`flex items-center gap-2 px-4 py-2 rounded font-bold transition-all ${
-          editingOrder === tab
-            ? "bg-blue-600 text-white shadow-md"
-            : "bg-white border border-blue-300 hover:bg-blue-50 text-blue-700 hover:shadow-sm"
-        } disabled:opacity-50`}
+  // ----------------- CategoryForm Component -----------------
+  const CategoryForm = () => {
+    const [name, setName] = useState("");
+    const [slug, setSlug] = useState("");
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      try {
+        if (!name.trim() || !slug.trim()) {
+          setErrorMessage("Please fill in both fields.");
+          return;
+        }
+
+        setUploading(true);
+
+        const { data: existing, error: dupError } = await supabase
+          .from("categories")
+          .select("id")
+          .eq("slug", slug.trim())
+          .maybeSingle();
+
+        if (dupError) throw dupError;
+        if (existing) {
+          setErrorMessage(`Category ID "${slug}" already exists.`);
+          return;
+        }
+
+        // New category gets display_order at end
+        const payload = {
+          name: name.trim(),
+          slug: slug.trim(),
+          display_order: categories.length + 1
+        };
+
+        const { data: newCategory, error } = await supabase
+          .from("categories")
+          .insert([payload])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (newCategory) {
+          setCategories(prev => [...prev, newCategory]);
+        }
+
+        setSuccessMessage("Category added successfully");
+        setName("");
+        setSlug("");
+      } catch (error: any) {
+        setErrorMessage("Failed to add category: " + (error?.message || "Unknown"));
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    return (
+      <form
+        onSubmit={handleSubmit}
+        className="bg-gray-100 p-6 rounded-lg mb-8 flex flex-col md:flex-row gap-4 items-end border border-gray-200 shadow-sm"
       >
-        {editingOrder === tab ? (
-          <>
-            <X size={16} /> Done Editing Order
-          </>
-        ) : (
-          <>
-            <GripVertical size={16} /> Edit Order
-          </>
-        )}
-      </button>
-      <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
-        {editingOrder === tab ? (
-          <>
-            <span>Drag items to reorder. Items will appear in this exact order on frontend.</span>
-          </>
-        ) : (
-          <>
-            <ArrowUp01 size={16} className="text-blue-500" />
-            <span>Control display order manually (not by creation date)</span>
-          </>
-        )}
-      </div>
-    </div>
-  );
+        <div className="flex-1 w-full">
+          <label className="text-sm font-bold text-gray-700 block mb-1">Display Name</label>
+          <input
+            required
+            placeholder="Ex: Car Shampoos"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="p-2 border rounded w-full"
+          />
+        </div>
+
+        <div className="flex-1 w-full">
+          <label className="text-sm font-bold text-gray-700 block mb-1">Unique ID (Slug)</label>
+          <input
+            required
+            placeholder="Ex: car_shampoos"
+            value={slug}
+            onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "_"))}
+            className="p-2 border rounded w-full"
+          />
+        </div>
+
+        <button
+          disabled={uploading}
+          type="submit"
+          className="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 font-bold h-[42px] w-full md:w-auto disabled:opacity-50"
+        >
+          Add Category
+        </button>
+      </form>
+    );
+  };
+
+  // ----------------- TestimonialForm Component -----------------
+  const TestimonialForm = () => {
+    const [t, setT] = useState<Partial<Testimonial>>({
+      rating: 5,
+      customer_name: "",
+      comment: "",
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      try {
+        if (!t.customer_name?.trim() || !t.comment?.trim()) {
+          setErrorMessage("Please fill in all fields.");
+          return;
+        }
+
+        setUploading(true);
+
+        const payload = {
+          customer_name: t.customer_name.trim(),
+          comment: t.comment.trim(),
+          rating: Number(t.rating || 5),
+        };
+
+        const { data: newTestimonial, error } = await supabase
+          .from("testimonials")
+          .insert([payload])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        if (newTestimonial) {
+          setTestimonials((prev) => [newTestimonial, ...prev]);
+        }
+
+        setSuccessMessage("Testimonial added successfully");
+        setT({ rating: 5, customer_name: "", comment: "" });
+      } catch (error: any) {
+        setErrorMessage("Failed to add testimonial: " + (error?.message || "Unknown"));
+      } finally {
+        setUploading(false);
+      }
+    };
+
+    return (
+      <form
+        onSubmit={handleSubmit}
+        className="bg-gray-100 p-6 rounded-lg mb-8 grid gap-4 border border-gray-200 shadow-sm"
+      >
+        <h3 className="text-xl font-bold font-anton text-gray-800">Add Testimonial</h3>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <input
+            required
+            placeholder="Customer Name"
+            className="p-2 border rounded"
+            value={t.customer_name || ""}
+            onChange={(e) => setT({ ...t, customer_name: e.target.value })}
+          />
+          <input
+            required
+            type="number"
+            min="1"
+            max="5"
+            placeholder="Rating (1-5)"
+            className="p-2 border rounded"
+            value={t.rating ?? 5}
+            onChange={(e) => setT({ ...t, rating: Number(e.target.value) })}
+          />
+        </div>
+
+        <textarea
+          required
+          placeholder="Comment"
+          className="p-2 border rounded w-full"
+          rows={3}
+          value={t.comment || ""}
+          onChange={(e) => setT({ ...t, comment: e.target.value })}
+        />
+
+        <button
+          disabled={uploading}
+          type="submit"
+          className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 font-bold disabled:opacity-50"
+        >
+          Add Testimonial
+        </button>
+      </form>
+    );
+  };
 
   // ----------------- Render -----------------
-
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-600">
@@ -1767,17 +1940,31 @@ export default function AdminPage() {
           ))}
         </div>
 
-        {/* Products */}
+        {/* Products Tab */}
         {activeTab === "products" && (
           <div className="animate-fade-in">
             <ProductForm />
-            
-            {editingOrder === "products" && <OrderControls tab="products" />}
+
+            {/* Order Controls */}
+            {editingOrder === "products" && (
+              <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <button
+                  onClick={() => toggleOrderEditing("products")}
+                  disabled={uploading}
+                  className="flex items-center gap-2 px-4 py-2 rounded font-bold transition-all bg-blue-600 text-white shadow-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  <X size={16} /> Done Editing Order
+                </button>
+                <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
+                  Drag items using ↑↓ buttons. Items will appear in this exact order on frontend.
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
               <h3 className="font-bold text-gray-500">
-                Existing Products ({filteredProducts.length}) 
-                {editingOrder === "products" && " - Drag to reorder"}
+                Existing Products ({filteredProducts.length})
+                {editingOrder === "products" && " - Use ↑↓ to reorder"}
               </h3>
 
               <div className="relative w-full md:w-64">
@@ -1802,105 +1989,113 @@ export default function AdminPage() {
             </div>
 
             <div className="grid gap-4">
-              {filteredProducts.map((p, index) => (
-                <div
-                  key={p.id}
-                  draggable={editingOrder === "products"}
-                  onDragStart={() => handleDragStart(p.id)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(p.id, p.id)}
-                  className={`flex items-start justify-between border p-4 rounded-lg hover:shadow-md transition-all bg-white cursor-default group ${
-                    editingProduct?.id === p.id 
-                      ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50" 
-                      : editingOrder === "products" 
-                        ? "border-blue-200 hover:border-blue-300 cursor-grab active:cursor-grabbing" 
-                        : "border-gray-200"
-                  } ${draggedItem === p.id ? "ring-2 ring-blue-400 bg-blue-50 scale-105 shadow-lg" : ""}`}
-                >
-                  {editingOrder === "products" && (
-                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center mr-2 opacity-0 group-hover:opacity-100 lg:opacity-100 lg:group-hover:opacity-100 transition-all">
-                      <GripVertical 
-                        size={16} 
-                        className="text-blue-500 cursor-grab active:cursor-grabbing"
-                        draggable={false}
-                      />
-                    </div>
-                  )}
-
-                  <div className={`flex items-center gap-4 flex-1 min-w-0 ${editingOrder === "products" ? "pt-2" : ""}`}>
-                    <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden relative">
-                      {p.image_url ? (
-                        <img
-                          src={p.image_url}
-                          alt={p.name}
-                          className={`w-full h-full object-cover ${p.stock === false ? "grayscale opacity-50" : ""}`}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
-                      )}
-
-                      {p.featured && (
-                        <div
-                          className="absolute top-0 right-0 bg-yellow-400 text-xs p-1 rounded-bl shadow-sm z-10"
-                          title="Best Seller"
-                        >
-                          <Star size={10} className="fill-black text-black" />
-                        </div>
-                      )}
-
-                      {p.stock === false && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] font-bold text-center leading-none">
-                          NO STOCK
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-bold text-lg text-gray-800 truncate">{p.name}</h4>
-                        {p.featured && (
-                          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-bold border border-yellow-200">
-                            Best Seller
-                          </span>
+              {filteredProducts.map((p, index) => {
+                const globalIndex = products.findIndex(prod => prod.id === p.id);
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex items-center justify-between border p-4 rounded-lg hover:shadow-md transition-all bg-white ${
+                      editingProduct?.id === p.id 
+                        ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50" 
+                        : editingOrder === "products" 
+                          ? "border-blue-200 bg-blue-50" 
+                          : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0 overflow-hidden relative">
+                        {p.image_url ? (
+                          <img
+                            src={p.image_url}
+                            alt={p.name}
+                            className={`w-full h-full object-cover ${p.stock === false ? "grayscale opacity-50" : ""}`}
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
                         )}
+
+                        {p.featured && (
+                          <div className="absolute top-0 right-0 bg-yellow-400 text-xs p-1 rounded-bl shadow-sm z-10" title="Best Seller">
+                            <Star size={10} className="fill-black text-black" />
+                          </div>
+                        )}
+
                         {p.stock === false && (
-                          <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold border border-red-200">
-                            Out of Stock
-                          </span>
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-[10px] font-bold text-center leading-none">
+                            NO STOCK
+                          </div>
                         )}
                       </div>
 
-                      <p className="text-sm text-gray-500 font-mono">
-                        ₹{p.price} <span className="mx-2">•</span> {p.category_slug}
-                      </p>
-                      {editingOrder === "products" && (
-                        <p className="text-xs text-blue-600 font-mono mt-1">
-                          Position: #{p.display_order || index + 1}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-lg text-gray-800 truncate">{p.name}</h4>
+                          {p.featured && (
+                            <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-bold border border-yellow-200">
+                              Best Seller
+                            </span>
+                          )}
+                          {p.stock === false && (
+                            <span className="bg-red-100 text-red-800 text-xs px-2 py-0.5 rounded-full font-bold border border-red-200">
+                              Out of Stock
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-sm text-gray-500 font-mono">
+                          ₹{p.price} <span className="mx-2">•</span> {p.category_slug}
                         </p>
+                        {editingOrder === "products" && (
+                          <p className="text-xs text-blue-600 font-mono mt-1">
+                            Position: #{p.display_order || globalIndex + 1}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-4">
+                      {editingOrder === "products" && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => moveItemUp("products", p.id, globalIndex)}
+                            disabled={globalIndex === 0 || uploading}
+                            className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Move Up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveItemDown("products", p.id, globalIndex)}
+                            disabled={globalIndex === products.length - 1 || uploading}
+                            className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Move Down"
+                          >
+                            ↓
+                          </button>
+                        </>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => startEditing(p)}
+                        className="text-blue-500 hover:bg-blue-50 p-2 rounded transition-colors"
+                        title="Edit Product"
+                      >
+                        <Pencil size={20} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete("products", p.id)}
+                        className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
+                        title="Delete Product"
+                      >
+                        <Trash2 size={20} />
+                      </button>
                     </div>
                   </div>
-
-                  <div className="flex gap-2 flex-shrink-0 ml-4">
-                    <button
-                      type="button"
-                      onClick={() => startEditing(p)}
-                      className="text-blue-500 hover:bg-blue-50 p-2 rounded transition-colors"
-                      title="Edit Product"
-                    >
-                      <Pencil size={20} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete("products", p.id)}
-                      className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
-                      title="Delete Product"
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
 
               {filteredProducts.length === 0 && (
                 <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
@@ -1908,7 +2103,11 @@ export default function AdminPage() {
                     {searchQuery ? `No products match "${searchQuery}"` : "No products found."}
                   </p>
                   {searchQuery && (
-                    <button type="button" onClick={() => setSearchQuery("")} className="text-sm text-red-600 font-bold hover:underline">
+                    <button 
+                      type="button" 
+                      onClick={() => setSearchQuery("")} 
+                      className="text-sm text-red-600 font-bold hover:underline"
+                    >
                       Clear Search
                     </button>
                   )}
@@ -1918,42 +2117,42 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Categories */}
+        {/* Categories Tab */}
         {activeTab === "categories" && (
           <div className="animate-fade-in">
-            {editingOrder === "categories" && <OrderControls tab="categories" />}
-            
-            <CategoryForm />
+            {/* Order Controls */}
+            {editingOrder === "categories" && (
+              <div className="flex flex-col sm:flex-row gap-3 mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <button
+                  onClick={() => toggleOrderEditing("categories")}
+                  disabled={uploading}
+                  className="flex items-center gap-2 px-4 py-2 rounded font-bold transition-all bg-blue-600 text-white shadow-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  <X size={16} /> Done Editing Order
+                </button>
+                <div className="text-sm text-blue-700 flex items-center gap-1 flex-1">
+                  Use ↑↓ buttons to reorder. Items will appear in this exact order on frontend.
+                </div>
+              </div>
+            )}
 
+            <CategoryForm />
+            
             <h3 className="font-bold text-gray-500 mb-4">
               Existing Categories ({categories.length})
-              {editingOrder === "categories" && " - Drag to reorder"}
+              {editingOrder === "categories" && " - Use ↑↓ to reorder"}
             </h3>
             
             <div className="grid gap-3">
               {categories.map((c, index) => (
                 <div
                   key={c.id}
-                  draggable={editingOrder === "categories"}
-                  onDragStart={() => handleDragStart(c.id)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(c.id, c.id)}
-                  className={`flex items-center justify-between border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all cursor-default group ${
-                    editingOrder === "categories"
-                      ? "border-blue-200 hover:border-blue-300 cursor-grab active:cursor-grabbing"
+                  className={`flex items-center justify-between border p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-all ${
+                    editingOrder === "categories" 
+                      ? "border-blue-200 bg-blue-50" 
                       : "border-gray-200"
-                  } ${draggedItem === c.id ? "ring-2 ring-blue-400 bg-blue-50 scale-105 shadow-lg" : ""}`}
+                  }`}
                 >
-                  {editingOrder === "categories" && (
-                    <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center mr-2 opacity-0 group-hover:opacity-100 lg:opacity-100 lg:group-hover:opacity-100 transition-all">
-                      <GripVertical 
-                        size={16} 
-                        className="text-blue-500 cursor-grab active:cursor-grabbing"
-                        draggable={false}
-                      />
-                    </div>
-                  )}
-                  
                   <div className="flex-1 min-w-0">
                     <span className="font-bold text-lg text-gray-800 block truncate">{c.name}</span>
                     <span className="text-gray-500 text-sm font-mono bg-gray-100 px-2 py-1 rounded">
@@ -1966,21 +2165,45 @@ export default function AdminPage() {
                     )}
                   </div>
                   
-                  <button
-                    type="button"
-                    onClick={() => handleDelete("categories", c.id)}
-                    className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors ml-4 flex-shrink-0"
-                    title="Delete Category"
-                  >
-                    <Trash2 size={20} />
-                  </button>
+                  <div className="flex items-center gap-2 ml-4">
+                    {editingOrder === "categories" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => moveItemUp("categories", c.id, index)}
+                          disabled={index === 0 || uploading}
+                          className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Move Up"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveItemDown("categories", c.id, index)}
+                          disabled={index === categories.length - 1 || uploading}
+                          className="w-8 h-8 flex items-center justify-center text-blue-600 hover:bg-blue-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Move Down"
+                        >
+                          ↓
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete("categories", c.id)}
+                      className="text-red-500 hover:bg-red-50 p-2 rounded transition-colors"
+                      title="Delete Category"
+                    >
+                      <Trash2 size={20} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Testimonials */}
+        {/* Testimonials Tab */}
         {activeTab === "testimonials" && (
           <div className="animate-fade-in">
             <TestimonialForm />
@@ -2010,198 +2233,6 @@ export default function AdminPage() {
           </div>
         )}
       </div>
-
-      {/* Category Form Component */}
-      const CategoryForm = () => {
-        const [name, setName] = useState("");
-        const [slug, setSlug] = useState("");
-
-        const handleSubmit = async (e: React.FormEvent) => {
-          e.preventDefault();
-          setErrorMessage(null);
-          setSuccessMessage(null);
-
-          try {
-            if (!name.trim() || !slug.trim()) {
-              setErrorMessage("Please fill in both fields.");
-              return;
-            }
-
-            setUploading(true);
-
-            const { data: existing, error: dupError } = await supabase
-              .from("categories")
-              .select("id")
-              .eq("slug", slug.trim())
-              .maybeSingle();
-
-            if (dupError) throw dupError;
-            if (existing) {
-              setErrorMessage(`Category ID "${slug}" already exists.`);
-              return;
-            }
-
-            // New category gets display_order at end
-            const payload = {
-              name: name.trim(),
-              slug: slug.trim(),
-              display_order: categories.length + 1
-            };
-
-            const { data: newCategory, error } = await supabase
-              .from("categories")
-              .insert([payload])
-              .select()
-              .single();
-
-            if (error) throw error;
-
-            if (newCategory) {
-              setCategories(prev => [...prev, newCategory]);
-            }
-
-            setSuccessMessage("Category added successfully");
-            setName("");
-            setSlug("");
-          } catch (error: any) {
-            setErrorMessage("Failed to add category: " + (error?.message || "Unknown"));
-          } finally {
-            setUploading(false);
-          }
-        };
-
-        return (
-          <form
-            onSubmit={handleSubmit}
-            className="bg-gray-100 p-6 rounded-lg mb-8 flex flex-col md:flex-row gap-4 items-end border border-gray-200 shadow-sm"
-          >
-            <div className="flex-1 w-full">
-              <label className="text-sm font-bold text-gray-700 block mb-1">Display Name</label>
-              <input
-                required
-                placeholder="Ex: Car Shampoos"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="p-2 border rounded w-full"
-              />
-            </div>
-
-            <div className="flex-1 w-full">
-              <label className="text-sm font-bold text-gray-700 block mb-1">Unique ID (Slug)</label>
-              <input
-                required
-                placeholder="Ex: car_shampoos"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, "_"))}
-                className="p-2 border rounded w-full"
-              />
-            </div>
-
-            <button
-              disabled={uploading}
-              type="submit"
-              className="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 font-bold h-[42px] w-full md:w-auto disabled:opacity-50"
-            >
-              Add Category
-            </button>
-          </form>
-        );
-      };
-
-      {/* Testimonial Form Component */}
-      const TestimonialForm = () => {
-        const [t, setT] = useState<Partial<Testimonial>>({
-          rating: 5,
-          customer_name: "",
-          comment: "",
-        });
-
-        const handleSubmit = async (e: React.FormEvent) => {
-          e.preventDefault();
-          setErrorMessage(null);
-          setSuccessMessage(null);
-
-          try {
-            if (!t.customer_name?.trim() || !t.comment?.trim()) {
-              setErrorMessage("Please fill in all fields.");
-              return;
-            }
-
-            setUploading(true);
-
-            const payload = {
-              customer_name: t.customer_name.trim(),
-              comment: t.comment.trim(),
-              rating: Number(t.rating || 5),
-            };
-
-            const { data: newTestimonial, error } = await supabase
-              .from("testimonials")
-              .insert([payload])
-              .select()
-              .single();
-
-            if (error) throw error;
-
-            if (newTestimonial) {
-              setTestimonials((prev) => [newTestimonial, ...prev]);
-            }
-
-            setSuccessMessage("Testimonial added successfully");
-            setT({ rating: 5, customer_name: "", comment: "" });
-          } catch (error: any) {
-            setErrorMessage("Failed to add testimonial: " + (error?.message || "Unknown"));
-          } finally {
-            setUploading(false);
-          }
-        };
-
-        return (
-          <form
-            onSubmit={handleSubmit}
-            className="bg-gray-100 p-6 rounded-lg mb-8 grid gap-4 border border-gray-200 shadow-sm"
-          >
-            <h3 className="text-xl font-bold font-anton text-gray-800">Add Testimonial</h3>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <input
-                required
-                placeholder="Customer Name"
-                className="p-2 border rounded"
-                value={t.customer_name || ""}
-                onChange={(e) => setT({ ...t, customer_name: e.target.value })}
-              />
-              <input
-                required
-                type="number"
-                min="1"
-                max="5"
-                placeholder="Rating (1-5)"
-                className="p-2 border rounded"
-                value={t.rating ?? 5}
-                onChange={(e) => setT({ ...t, rating: Number(e.target.value) })}
-              />
-            </div>
-
-            <textarea
-              required
-              placeholder="Comment"
-              className="p-2 border rounded w-full"
-              rows={3}
-              value={t.comment || ""}
-              onChange={(e) => setT({ ...t, comment: e.target.value })}
-            />
-
-            <button
-              disabled={uploading}
-              type="submit"
-              className="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 font-bold disabled:opacity-50"
-            >
-              Add Testimonial
-            </button>
-          </form>
-        );
-      };
     </div>
   );
 }
