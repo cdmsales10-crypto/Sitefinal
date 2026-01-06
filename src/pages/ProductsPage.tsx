@@ -21,15 +21,19 @@ export default function ProductsPage() {
     try {
       setLoading(true);
 
-      // 1. Fetch Categories
-      const { data: catData } = await supabase.from("categories").select("*");
+     // 1. Fetch Categories first
+      const { data: catData } = await supabase
+      .from("categories")
+      .select("*")
+      .order("display_order", { ascending: true, nullsFirst: false });
+
       if (catData) setCategories(catData);
 
-      // 2. Fetch Products
+// 2. Fetch Products
       const { data: prodData } = await supabase
-        .from("products")
-        .select("*")
-        .order("created_at", { ascending: false });
+      .from("products")
+      .select("*")
+      .order("display_order", { ascending: true, nullsFirst: false });
 
       if (prodData) {
         const withMrp = prodData.map((p: any) => ({
