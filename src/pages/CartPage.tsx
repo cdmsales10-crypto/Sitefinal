@@ -344,18 +344,18 @@ export default function CartPage() {
 
     const lines: string[] = [];
 
-    lines.push("🛒 *NEW WEBSITE ORDER*");
+    lines.push("*NEW WEBSITE ORDER*");
     lines.push("════════════════════");
     lines.push("");
 
-    lines.push(`👤 *Customer Details:*`);
+    lines.push(`*Customer Details:*`);
     lines.push(`Name: ${formData.name}`);
     lines.push(`Phone: ${formData.phone}`);
     lines.push(`Address: ${formData.address}`);
     lines.push(`Pincode: ${formData.pincode}`);
     lines.push("");
 
-    lines.push(`📦 *Order Items (${totalItems}):*`);
+    lines.push(`*Order Items (${totalItems}):*`);
     items.forEach((item, index) => {
       const subtotal = item.quantity * item.price;
       lines.push(
@@ -364,7 +364,7 @@ export default function CartPage() {
     });
 
     lines.push("");
-    lines.push(`💰 *Total: ₹${totalPrice.toFixed(2)}*`);
+    lines.push(`*Total: ₹${totalPrice.toFixed(2)}*`);
     lines.push("════════════════════");
     lines.push("Please confirm order & delivery details!");
 
