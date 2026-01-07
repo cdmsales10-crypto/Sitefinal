@@ -39,7 +39,7 @@ export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
+  //const [displayProducts, setDisplayProducts] = useState<Product[]>([]);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
   // Initial Load
@@ -49,16 +49,45 @@ export default function HomePage() {
     loadTestimonials();
   }, []);
 
-  // Filter Logic
   useEffect(() => {
-    if (activeCategory === "all") {
-      setDisplayProducts(products);
-    } else {
-      setDisplayProducts(
-        products.filter((p) => p.category_slug === activeCategory)
-      );
+    loadFeaturedProducts(activeCategory);
+  }, [activeCategory]);
+
+  // Filter Logic
+  // useEffect(() => {
+  //   if (activeCategory === "all") {
+  //     setDisplayProducts(products);
+  //   } else {
+  //     setDisplayProducts(
+  //       products.filter((p) => p.category_slug === activeCategory)
+  //     );
+  //   }
+  // }, [activeCategory, products]);
+
+  const loadFeaturedProducts = async (category: string = "all") => {
+    try {
+      let query = supabase
+        .from("products")
+        .select("*")
+        .order("display_order", { ascending: true, nullsFirst: false })
+        .limit(8);
+
+      if (category !== "all") {
+        query = query.eq("category_slug", category);
+      }
+
+      const { data } = await query;
+      if (data) {
+        const withMrp = data.map((p: any) => ({
+          ...p,
+          mrp: p.mrp ?? Math.round(p.price * 1.2),
+        }));
+        setProducts(withMrp);
+      }
+    } catch (error) {
+      console.log("Products not available");
     }
-  }, [activeCategory, products]);
+  };
 
   // --- Data Fetching ---
 
@@ -74,24 +103,24 @@ export default function HomePage() {
     }
   };
 
-  const loadFeaturedProducts = async () => {
-    try {
-      const { data } = await supabase
-  .from("products")
-  .select("*")
-  .order("display_order", { ascending: true, nullsFirst: false }).limit(8);
+  // const loadFeaturedProducts = async () => {
+  //   try {
+  //     const { data } = await supabase
+  // .from("products")
+  // .select("*")
+  // .order("display_order", { ascending: true, nullsFirst: false }).limit(8);
 
-      if (data) {
-        const withMrp = data.map((p: any) => ({
-          ...p,
-          mrp: p.mrp ?? Math.round(p.price * 1.2),
-        }));
-        setProducts(withMrp);
-      }
-    } catch (error) {
-      console.log("Products not available");
-    }
-  };
+  //     if (data) {
+  //       const withMrp = data.map((p: any) => ({
+  //         ...p,
+  //         mrp: p.mrp ?? Math.round(p.price * 1.2),
+  //       }));
+  //       setProducts(withMrp);
+  //     }
+  //   } catch (error) {
+  //     console.log("Products not available");
+  //   }
+  // };
 
   const loadTestimonials = async () => {
     try {
